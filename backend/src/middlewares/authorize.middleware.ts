@@ -23,55 +23,20 @@ export function authorize(action: Action, getProjectIdFromReq?: (req: Request) =
       }
 
       // 2. Global Actions (User Management)
-      if (action.startsWith('user:')) {
+      if (action.startsWith('user:') || action === 'project:create') {
         throw new AppError('Forbidden. Admin rights required.', 403);
       }
 
-      // 3. Resolve Project ID
-      let projectId: string | undefined;
+    // 3. Resolve the project from the RESOURCE (never trust ids the client controls)
+    const projectId = await resolveProjectId(req);
 
-      if (getProjectIdFromReq) {
-        projectId = getProjectIdFromReq(req);
-      } else if (req.params.projectId) {
-        projectId = req.params.projectId;
-      } else if (req.params.id && req.baseUrl.includes('/projects')) {
-        projectId = req.params.id;
-      } else if (req.body?.projectId) {
-        projectId = req.body.projectId;
-      }
+    if (!projectId && action === 'activity:read') {
+      return next(); // global feed: the service filters by memberships
+    }
 
-      // Task or Comment direct route resolution if projectId not directly in params
-      if (!projectId && req.params.id) {
-        if (req.baseUrl.includes('/tasks') || action.startsWith('task:')) {
-          const task = await prisma.task.findUnique({
-            where: { id: req.params.id },
-            select: { projectId: true, assigneeId: true },
-          });
-          if (!task) {
-            throw new AppError('Task not found.', 404);
-          }
-          projectId = task.projectId;
-          (req as any).targetTask = task;
-        } else if (req.baseUrl.includes('/comments') || action.startsWith('comment:')) {
-          const comment = await prisma.comment.findUnique({
-            where: { id: req.params.id },
-            select: { userId: true, task: { select: { projectId: true } } },
-          });
-          if (!comment) {
-            throw new AppError('Comment not found.', 404);
-          }
-          projectId = comment.task.projectId;
-          (req as any).targetComment = comment;
-        }
-      }
-
-      if (!projectId && action === 'activity:read') {
-        return next();
-      }
-
-      if (!projectId) {
-        throw new AppError('Unable to resolve project context for permission check.', 400);
-      }
+    if (!projectId) {
+      throw new AppError('Unable to resolve project context for permission check.', 400);
+    }
 
       // 4. Fetch Project Membership
       const member = await prisma.projectMember.findUnique({
@@ -136,4 +101,40 @@ export function authorize(action: Action, getProjectIdFromReq?: (req: Request) =
       next(error);
     }
   };
+}
+async function resolveProjectId(req: Request): Promise<string | undefined> {
+  const base = req.baseUrl;
+  let projectId: string | undefined;
+
+  if (base.endsWith('/comments') && req.params.id) {
+    const comment = await prisma.comment.findUnique({
+      where: { id: req.params.id },
+      select: { userId: true, task: { select: { id: true, projectId: true } } },
+    });
+    if (!comment) throw new AppError('Comment not found.', 404);
+    if (req.params.taskId && comment.task.id !== req.params.taskId) {
+      throw new AppError('Comment not found on this task.', 404);
+    }
+    (req as any).targetComment = comment;
+    projectId = comment.task.projectId;
+  } else {
+    const taskId = req.params.taskId ?? (base.endsWith('/tasks') ? req.params.id : undefined);
+    if (taskId) {
+      const task = await prisma.task.findUnique({
+        where: { id: taskId },
+        select: { projectId: true, assigneeId: true },
+      });
+      if (!task) throw new AppError('Task not found.', 404);
+      (req as any).targetTask = task;
+      projectId = task.projectId;
+    } else {
+      projectId = req.params.projectId ?? (base.endsWith('/projects') ? req.params.id : undefined);
+    }
+  }
+
+  // If the URL names a project, it must match the resource's real project
+  if (req.params.projectId && projectId && req.params.projectId !== projectId) {
+    throw new AppError('Resource not found in this project.', 404);
+  }
+  return projectId;
 }

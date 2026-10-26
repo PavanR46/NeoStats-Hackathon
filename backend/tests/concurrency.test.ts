@@ -155,4 +155,54 @@ describe('Optimistic Concurrency & Permission Boundary Integration Tests', () =>
     expect(res.status).toBe(403);
     expect(res.body.error.message).toContain('Team Members can only update tasks assigned to them');
   });
+
+  it('5. PM of project A must NOT modify a task that belongs to project B (nested URL)', async () => {
+    const other = await request(app)
+      .post('/api/projects').set('Cookie', adminCookie)
+      .send({ name: 'Other Project' });
+    const secret = await request(app)
+      .post(`/api/projects/${other.body.project.id}/tasks`).set('Cookie', adminCookie)
+      .send({ title: 'Secret task', priority: 'LOW', status: 'TODO' });
+
+    const res = await request(app)
+      .patch(`/api/projects/${testProjectId}/tasks/${secret.body.task.id}`)
+      .set('Cookie', pmCookie)
+      .send({ version: 1, title: 'hacked' });
+
+    expect(res.status).toBe(404);
+  });
+
+  it('6. PM must NOT read activity of a project they are not in via ?projectId=', async () => {
+    const otherProject = await prisma.project.findFirst({ where: { name: 'Other Project' } });
+    const secretTask = await prisma.task.findFirst({ where: { title: 'Secret task' } });
+
+    if (!otherProject || !secretTask) {
+      throw new Error('Setup prerequisite missing for test 6');
+    }
+
+    const res = await request(app)
+      .get(`/api/activity?projectId=${otherProject.id}`)
+      .set('Cookie', pmCookie);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.some((a: any) => a.entityId === secretTask.id)).toBe(false);
+  });
+
+  it('7. Listing tasks without a project in the URL must be rejected (no body trick)', async () => {
+    const res = await request(app)
+      .get('/api/tasks')
+      .set('Cookie', memberCookie)
+      .send({ projectId: testProjectId });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('8. PM can comment on a task via /api/tasks/:id/comments', async () => {
+    const res = await request(app)
+      .post(`/api/tasks/${testTaskId}/comments`)
+      .set('Cookie', pmCookie)
+      .send({ content: 'Looking into it' });
+
+    expect(res.status).toBe(201);
+  });
 });
