@@ -24,6 +24,10 @@ describe('Optimistic Concurrency & Permission Boundary Integration Tests', () =>
 
     const hashedPassword = await bcrypt.hash('password123', 10);
 
+    const dbUrl = process.env.DATABASE_URL ?? '';
+    if (!/(_test|ci_db)/.test(dbUrl)) {
+      throw new Error('Refusing to wipe a non-test database.');
+    }
     // Seed test users
     const admin = await prisma.user.create({
       data: {
