@@ -8,6 +8,16 @@ import {
   getTasksQuerySchema,
 } from '../schemas/task.schema';
 
+// Admin or Project Manager of the ticket's project
+function isLead(req: Request) {
+  return req.user!.globalRole === 'ADMIN' || (req as any).projectRole === 'PROJECT_MANAGER';
+}
+
+// Viewers must never see internal notes
+function canSeeInternal(req: Request) {
+  return req.user!.globalRole === 'ADMIN' || (req as any).projectRole !== 'VIEWER';
+}
+
 export async function createTaskController(req: Request, res: Response, next: NextFunction) {
   try {
         if (!req.params.projectId) {
@@ -36,7 +46,7 @@ export async function getTasksController(req: Request, res: Response, next: Next
 
 export async function getTaskByIdController(req: Request, res: Response, next: NextFunction) {
   try {
-    const task = await taskService.getTaskById(req.params.id);
+    const task = await taskService.getTaskById(req.params.id, canSeeInternal(req));
     return res.status(200).json({ task });
   } catch (error) {
     next(error);
