@@ -5,92 +5,83 @@ import { prisma } from '../src/db/prisma';
 import bcrypt from 'bcrypt';
 
 describe('Optimistic Concurrency & Permission Boundary Integration Tests', () => {
-  let adminCookie: string;
+    let adminCookie: string;
   let pmCookie: string;
   let memberCookie: string;
+  let viewerCookie: string;
   let testProjectId: string;
   let testTaskId: string;
   let memberUserId: string;
+  let pmUserId: string;
 
   beforeAll(async () => {
-    // Clean database before testing
-    await prisma.notification.deleteMany();
-    await prisma.activityLog.deleteMany();
-    await prisma.comment.deleteMany();
-    await prisma.task.deleteMany();
-    await prisma.projectMember.deleteMany();
-    await prisma.project.deleteMany();
-    await prisma.user.deleteMany();
-
-    const hashedPassword = await bcrypt.hash('password123', 10);
-
+    // SAFETY FIRST: this guard must run before anything is deleted
     const dbUrl = process.env.DATABASE_URL ?? '';
     if (!/(_test|ci_db)/.test(dbUrl)) {
       throw new Error('Refusing to wipe a non-test database.');
     }
-    // Seed test users
-    const admin = await prisma.user.create({
-      data: {
-        email: 'testadmin@neostats.com',
-        password: hashedPassword,
-        name: 'Test Admin',
-        globalRole: 'ADMIN',
-      },
+
+    await prisma.notification.deleteMany();
+    await prisma.activityLog.deleteMany();
+    await prisma.escalation.deleteMany();
+    await prisma.comment.deleteMany();
+    await prisma.task.deleteMany();
+    await prisma.slaPolicy.deleteMany();
+    await prisma.kpiTarget.deleteMany();
+    await prisma.projectMember.deleteMany();
+    await prisma.project.deleteMany();
+    await prisma.user.deleteMany();
+
+    // Global SLA policies so new tickets get due dates
+    await prisma.slaPolicy.createMany({
+      data: [
+        { priority: 'URGENT', responseMinutes: 15, resolveMinutes: 240 },
+        { priority: 'HIGH', responseMinutes: 60, resolveMinutes: 480 },
+        { priority: 'MEDIUM', responseMinutes: 240, resolveMinutes: 1440 },
+        { priority: 'LOW', responseMinutes: 480, resolveMinutes: 4320 },
+      ],
     });
 
+    const hashedPassword = await bcrypt.hash('password123', 10);
+
+    await prisma.user.create({
+      data: { email: 'testadmin@neostats.com', password: hashedPassword, name: 'Test Admin', globalRole: 'ADMIN' },
+    });
     const pm = await prisma.user.create({
-      data: {
-        email: 'testpm@neostats.com',
-        password: hashedPassword,
-        name: 'Test PM',
-        globalRole: 'USER',
-      },
+      data: { email: 'testpm@neostats.com', password: hashedPassword, name: 'Test PM', globalRole: 'USER' },
     });
-
     const member = await prisma.user.create({
-      data: {
-        email: 'testmember@neostats.com',
-        password: hashedPassword,
-        name: 'Test Member',
-        globalRole: 'USER',
-      },
+      data: { email: 'testmember@neostats.com', password: hashedPassword, name: 'Test Member', globalRole: 'USER' },
     });
+    const viewer = await prisma.user.create({
+      data: { email: 'testviewer@neostats.com', password: hashedPassword, name: 'Test Viewer', globalRole: 'USER' },
+    });
+    pmUserId = pm.id;
     memberUserId = member.id;
 
-    // Log in and capture auth cookies
-    const adminRes = await request(app)
-      .post('/api/auth/login')
-      .send({ email: 'testadmin@neostats.com', password: 'password123' });
-    adminCookie = adminRes.headers['set-cookie'][0];
+    const login = async (email: string) => {
+      const res = await request(app).post('/api/auth/login').send({ email, password: 'password123' });
+      return res.headers['set-cookie'][0];
+    };
+    adminCookie = await login('testadmin@neostats.com');
+    pmCookie = await login('testpm@neostats.com');
+    memberCookie = await login('testmember@neostats.com');
+    viewerCookie = await login('testviewer@neostats.com');
 
-    const pmRes = await request(app)
-      .post('/api/auth/login')
-      .send({ email: 'testpm@neostats.com', password: 'password123' });
-    pmCookie = pmRes.headers['set-cookie'][0];
-
-    const memberRes = await request(app)
-      .post('/api/auth/login')
-      .send({ email: 'testmember@neostats.com', password: 'password123' });
-    memberCookie = memberRes.headers['set-cookie'][0];
-
-    // Create test project (Admin action)
     const projectRes = await request(app)
       .post('/api/projects')
       .set('Cookie', adminCookie)
       .send({ name: 'Concurrency Test Project', description: 'Testing 409 conflicts' });
-
     testProjectId = projectRes.body.project.id;
 
-    // Add PM and Member to project
-    await request(app)
-      .post(`/api/projects/${testProjectId}/members`)
-      .set('Cookie', adminCookie)
-      .send({ userId: pm.id, role: 'PROJECT_MANAGER' });
-
-    await request(app)
-      .post(`/api/projects/${testProjectId}/members`)
-      .set('Cookie', adminCookie)
-      .send({ userId: memberUserId, role: 'TEAM_MEMBER' });
+    const addMember = (userId: string, role: string) =>
+      request(app)
+        .post(`/api/projects/${testProjectId}/members`)
+        .set('Cookie', adminCookie)
+        .send({ userId, role });
+    await addMember(pm.id, 'PROJECT_MANAGER');
+    await addMember(member.id, 'TEAM_MEMBER');
+    await addMember(viewer.id, 'VIEWER');
   });
 
   afterAll(async () => {
@@ -208,5 +199,104 @@ describe('Optimistic Concurrency & Permission Boundary Integration Tests', () =>
       .send({ content: 'Looking into it' });
 
     expect(res.status).toBe(201);
+  });
+    const mkTicket = async (body: Record<string, unknown> = {}) => {
+    const res = await request(app)
+      .post(`/api/projects/${testProjectId}/tasks`)
+      .set('Cookie', pmCookie)
+      .send({ title: 'KPM test ticket', priority: 'HIGH', ...body });
+    expect(res.status).toBe(201);
+    return res.body.task;
+  };
+
+  it('9. New ticket gets SLA due dates from its priority', async () => {
+    const t = await mkTicket({ priority: 'HIGH' });
+    const minutes = (new Date(t.slaResolveDueAt).getTime() - new Date(t.createdAt).getTime()) / 60000;
+    expect(Math.round(minutes)).toBe(480);
+    expect(t.ticketNumber).toBeGreaterThan(0);
+  });
+
+  it('10. Only a PUBLIC reply from someone other than the requester sets firstResponseAt', async () => {
+    const t = await mkTicket({ requesterId: memberUserId });
+    const getTicket = async () =>
+      (await request(app).get(`/api/tasks/${t.id}`).set('Cookie', pmCookie)).body.task;
+
+    await request(app)
+      .post(`/api/tasks/${t.id}/comments`).set('Cookie', pmCookie)
+      .send({ content: 'private note', isInternal: true });
+    expect((await getTicket()).firstResponseAt).toBeNull();
+
+    await request(app)
+      .post(`/api/tasks/${t.id}/comments`).set('Cookie', pmCookie)
+      .send({ content: 'We are on it' });
+    expect((await getTicket()).firstResponseAt).not.toBeNull();
+  });
+
+  it('11. Resolve sets resolvedAt; reopen clears it and bumps reopenCount', async () => {
+    const t = await mkTicket();
+    const done = await request(app)
+      .patch(`/api/tasks/${t.id}/status`).set('Cookie', pmCookie)
+      .send({ version: t.version, status: 'DONE' });
+    expect(done.status).toBe(200);
+    expect(done.body.task.resolvedAt).not.toBeNull();
+
+    const reopened = await request(app)
+      .patch(`/api/tasks/${t.id}/status`).set('Cookie', pmCookie)
+      .send({ version: done.body.task.version, status: 'TODO' });
+    expect(reopened.status).toBe(200);
+    expect(reopened.body.task.resolvedAt).toBeNull();
+    expect(reopened.body.task.reopenCount).toBe(1);
+  });
+
+  it('12. Team Member cannot reassign, reprioritise or close a ticket', async () => {
+    const t = await mkTicket({ assigneeId: memberUserId });
+
+    const reassign = await request(app)
+      .patch(`/api/tasks/${t.id}`).set('Cookie', memberCookie)
+      .send({ version: t.version, assigneeId: pmUserId });
+    expect(reassign.status).toBe(403);
+
+    const reprioritise = await request(app)
+      .patch(`/api/tasks/${t.id}`).set('Cookie', memberCookie)
+      .send({ version: t.version, priority: 'LOW' });
+    expect(reprioritise.status).toBe(403);
+
+    const close = await request(app)
+      .patch(`/api/tasks/${t.id}/status`).set('Cookie', memberCookie)
+      .send({ version: t.version, status: 'CLOSED' });
+    expect(close.status).toBe(403);
+  });
+
+  it('13. A ticket cannot be escalated by simply setting its status', async () => {
+    const t = await mkTicket();
+    const res = await request(app)
+      .patch(`/api/tasks/${t.id}/status`).set('Cookie', pmCookie)
+      .send({ version: t.version, status: 'ESCALATED' });
+    expect(res.status).toBe(400);
+  });
+
+  it('14. Viewers never see internal notes', async () => {
+    const t = await mkTicket();
+    await request(app)
+      .post(`/api/tasks/${t.id}/comments`).set('Cookie', pmCookie)
+      .send({ content: 'internal only', isInternal: true });
+    await request(app)
+      .post(`/api/tasks/${t.id}/comments`).set('Cookie', pmCookie)
+      .send({ content: 'public reply' });
+
+    const asViewer = await request(app).get(`/api/tasks/${t.id}/comments`).set('Cookie', viewerCookie);
+    expect(asViewer.status).toBe(200);
+    expect(asViewer.body.data.map((c: any) => c.content)).toEqual(['public reply']);
+
+    const asPm = await request(app).get(`/api/tasks/${t.id}/comments`).set('Cookie', pmCookie);
+    expect(asPm.body.data).toHaveLength(2);
+  });
+
+  it('15. Viewers cannot be assigned tickets', async () => {
+    const viewer = await prisma.user.findUnique({ where: { email: 'testviewer@neostats.com' } });
+    const res = await request(app)
+      .post(`/api/projects/${testProjectId}/tasks`).set('Cookie', pmCookie)
+      .send({ title: 'Bad assignment', assigneeId: viewer!.id });
+    expect(res.status).toBe(400);
   });
 });
