@@ -6,7 +6,7 @@ import { AppError } from '../middlewares/error.middleware';
 import { broadcastToProject, sendToUser } from '../socket';
 
 export async function createComment(actorUserId: string, taskId: string, input: CreateCommentInput) {
-  const { comment, task, mentionedUsers } = await prisma.$transaction(async (tx) => {
+    const { comment, task, mentionedUsers, staffIds } = await prisma.$transaction(async (tx) => {
     const taskRecord = await tx.task.findUnique({
       where: { id: taskId },
       include: {
@@ -23,6 +23,7 @@ export async function createComment(actorUserId: string, taskId: string, input: 
         taskId,
         userId: actorUserId,
         content: input.content,
+        isInternal: input.isInternal,
       },
       include: {
         user: { select: { id: true, name: true, email: true } },
@@ -40,7 +41,15 @@ export async function createComment(actorUserId: string, taskId: string, input: 
       },
       tx
     );
-
+        // First response = first PUBLIC reply from someone other than the requester.
+    // "firstResponseAt: null" in the where clause makes this safe if two replies race.
+    // The version is NOT bumped on purpose: it must never cause a false 409 for someone editing.
+    if (!input.isInternal && !taskRecord.firstResponseAt && taskRecord.requesterId !== actorUserId) {
+      await tx.task.updateMany({
+        where: { id: taskId, firstResponseAt: null },
+        data: { firstResponseAt: new Date() },
+      });
+    }
     // 1. Notify task assignee if different from actor
     if (taskRecord.assigneeId && taskRecord.assigneeId !== actorUserId) {
       const notif = await createNotification(
@@ -75,6 +84,7 @@ export async function createComment(actorUserId: string, taskId: string, input: 
         const matchedMember = projectMembers.find(
           (m) =>
             m.userId !== actorUserId &&
+            !(input.isInternal && m.role === 'VIEWER') &&
             (m.user.email.toLowerCase().includes(lowerHandle) ||
               m.user.name.toLowerCase().replace(/\s+/g, '').includes(lowerHandle))
         );
@@ -99,23 +109,40 @@ export async function createComment(actorUserId: string, taskId: string, input: 
       }
     }
 
-    return { comment: createdComment, task: taskRecord, mentionedUsers: mentionedUserRecords };
+       // Internal notes go only to staff, never to the whole project room (viewers are in it)
+    const staff = createdComment.isInternal
+      ? await tx.projectMember.findMany({
+          where: { projectId: taskRecord.projectId, role: { not: 'VIEWER' } },
+          select: { userId: true },
+        })
+      : [];
+
+    return {
+      comment: createdComment,
+      task: taskRecord,
+      mentionedUsers: mentionedUserRecords,
+      staffIds: staff.map((s) => s.userId),
+    };
   });
 
   // Broadcast real-time comment creation to project channel
-  broadcastToProject(task.projectId, 'comment:created', comment);
-
+  if (comment.isInternal) {
+    staffIds.forEach((id) => sendToUser(id, 'comment:created', comment));
+  } else {
+    broadcastToProject(task.projectId, 'comment:created', comment);
+  }
   return comment;
 }
 
-export async function getComments(taskId: string, query: GetCommentsQuery) {
+export async function getComments(taskId: string, query: GetCommentsQuery, includeInternal: boolean) {
   const { page = 1, limit = 20 } = query;
   const skip = (page - 1) * limit;
+  const where = { taskId, ...(includeInternal ? {} : { isInternal: false }) };
 
   const [total, comments] = await Promise.all([
-    prisma.comment.count({ where: { taskId } }),
+    prisma.comment.count({ where }),
     prisma.comment.findMany({
-      where: { taskId },
+      where,
       skip,
       take: limit,
       orderBy: { createdAt: 'asc' },
