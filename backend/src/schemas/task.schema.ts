@@ -7,6 +7,8 @@ export const createTaskSchema = z.object({
   status: z.nativeEnum(TaskStatus).default(TaskStatus.TODO),
   priority: z.nativeEnum(TaskPriority).default(TaskPriority.MEDIUM),
   assigneeId: z.string().uuid().nullable().optional(),
+  requesterId: z.string().uuid().nullable().optional(),
+  category: z.string().max(50).optional(),
   dueDate: z
     .string()
     .optional()
@@ -20,6 +22,7 @@ export const updateTaskSchema = z.object({
   status: z.nativeEnum(TaskStatus).optional(),
   priority: z.nativeEnum(TaskPriority).optional(),
   assigneeId: z.string().uuid().nullable().optional(),
+  category: z.string().max(50).optional(),
   dueDate: z
     .string()
     .nullable()

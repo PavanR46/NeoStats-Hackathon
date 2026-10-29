@@ -2,6 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import * as commentService from '../services/comment.service';
 import { createCommentSchema, getCommentsQuerySchema } from '../schemas/comment.schema';
 
+function canSeeInternal(req: Request) {
+  return req.user!.globalRole === 'ADMIN' || (req as any).projectRole !== 'VIEWER';
+}
+
 export async function createCommentController(req: Request, res: Response, next: NextFunction) {
   try {
     const input = createCommentSchema.parse(req.body);
@@ -15,7 +19,7 @@ export async function createCommentController(req: Request, res: Response, next:
 export async function getCommentsController(req: Request, res: Response, next: NextFunction) {
   try {
     const query = getCommentsQuerySchema.parse(req.query);
-    const result = await commentService.getComments(req.params.taskId, query);
+    const result = await commentService.getComments(req.params.taskId, query, canSeeInternal(req));
     return res.status(200).json(result);
   } catch (error) {
     next(error);

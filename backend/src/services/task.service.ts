@@ -1,23 +1,100 @@
+import { Prisma, ProjectRole, TaskPriority, TaskStatus } from '@prisma/client';
 import { prisma } from '../db/prisma';
-import { CreateTaskInput, UpdateTaskInput, GetTasksQuery, UpdateTaskStatusInput } from '../schemas/task.schema';
 import { recordActivity } from './activity.service';
 import { createNotification } from './notification.service';
 import { AppError, ConflictError } from '../middlewares/error.middleware';
 import { broadcastToProject, sendToUser } from '../socket';
 
+export interface CreateTaskInput {
+  title: string;
+  description?: string;
+  priority?: TaskPriority;
+  status?: TaskStatus;
+  assigneeId?: string | null;
+  requesterId?: string | null;
+  category?: string;
+  dueDate?: string | Date | null;
+}
+
+export interface UpdateTaskInput {
+  title?: string;
+  description?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  assigneeId?: string | null;
+  category?: string | null;
+  dueDate?: string | Date | null;
+  version: number;
+}
+
+export interface UpdateTaskStatusInput {
+  status: TaskStatus;
+  version: number;
+}
+
+export interface GetTasksQuery {
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  assigneeId?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+const MINUTE = 60_000;
+type Db = Prisma.TransactionClient;
+
+// Team-specific SLA policy first, then the global default (projectId = null)
+async function getSlaPolicy(db: Db, projectId: string, priority: TaskPriority) {
+  const specific = await db.slaPolicy.findFirst({ where: { projectId, priority } });
+  if (specific) return specific;
+  return db.slaPolicy.findFirst({ where: { projectId: null, priority } });
+}
+
+function slaDatesFrom(start: Date, policy: { responseMinutes: number; resolveMinutes: number } | null) {
+  return {
+    slaResponseDueAt: policy ? new Date(start.getTime() + policy.responseMinutes * MINUTE) : null,
+    slaResolveDueAt: policy ? new Date(start.getTime() + policy.resolveMinutes * MINUTE) : null,
+  };
+}
+
+async function assertAssignable(db: Db, projectId: string, userId: string) {
+  const member = await db.projectMember.findFirst({
+    where: { projectId, userId, role: { not: ProjectRole.VIEWER }, user: { isActive: true } },
+  });
+  if (!member) {
+    throw new AppError('Assignee must be an active, non-viewer member of this project.', 400);
+  }
+}
+
+const isFinished = (s: TaskStatus) => s === TaskStatus.DONE || s === TaskStatus.CLOSED;
+
 export async function createTask(creatorId: string, projectId: string, input: CreateTaskInput) {
-  const task = await prisma.$transaction(async (tx) => {
+  const { task, notifs } = await prisma.$transaction(async (tx) => {
     const project = await tx.project.findUnique({ where: { id: projectId } });
     if (!project) {
       throw new AppError('Project not found.', 404);
     }
-
+    if (project.isArchived) {
+      throw new AppError('This project is archived and read-only.', 403);
+    }
+    const status = input.status ?? TaskStatus.TODO;
+    if (isFinished(status) || input.status === TaskStatus.ESCALATED) {
+      throw new AppError('A new ticket must start as TODO, IN_PROGRESS or IN_REVIEW.', 400);
+    }
     if (input.assigneeId) {
-      const assignee = await tx.user.findUnique({ where: { id: input.assigneeId } });
-      if (!assignee || !assignee.isActive) {
-        throw new AppError('Assignee user not found or deactivated.', 400);
+      await assertAssignable(tx, projectId, input.assigneeId);
+    }
+    if (input.requesterId) {
+      const requester = await tx.user.findUnique({ where: { id: input.requesterId } });
+      if (!requester || !requester.isActive) {
+        throw new AppError('Requester not found or deactivated.', 400);
       }
     }
+
+    const now = new Date();
+    const priority = input.priority ?? TaskPriority.MEDIUM;
+    const policy = await getSlaPolicy(tx, projectId, priority);
 
     const createdTask = await tx.task.create({
       data: {
@@ -28,12 +105,17 @@ export async function createTask(creatorId: string, projectId: string, input: Cr
         priority: input.priority,
         version: 1,
         createdById: creatorId,
+        requesterId: input.requesterId ?? creatorId,
+        category: input.category,
         assigneeId: input.assigneeId,
         dueDate: input.dueDate,
+        createdAt: now,
+        ...slaDatesFrom(now, policy),
       },
       include: {
         assignee: { select: { id: true, name: true, email: true } },
         createdBy: { select: { id: true, name: true, email: true } },
+        requester: { select: { id: true, name: true, email: true } },
       },
     });
 
@@ -44,34 +126,38 @@ export async function createTask(creatorId: string, projectId: string, input: Cr
         action: 'TASK_CREATED',
         entityType: 'Task',
         entityId: createdTask.id,
-        metadata: { title: createdTask.title, status: createdTask.status, priority: createdTask.priority },
+        metadata: {
+          title: createdTask.title,
+          ticketNumber: createdTask.ticketNumber,
+          status: createdTask.status,
+          priority: createdTask.priority,
+        },
       },
       tx
     );
 
+    const notifs: any[] = [];
     if (input.assigneeId) {
       const notif = await createNotification(
         {
           userId: input.assigneeId,
           actorUserId: creatorId,
           type: 'TASK_ASSIGNED',
-          title: 'New Task Assigned',
-          message: `You were assigned to task "${createdTask.title}" in project "${project.name}"`,
+          title: 'New Ticket Assigned',
+          message: `You were assigned ticket #${createdTask.ticketNumber} "${createdTask.title}" in "${project.name}"`,
           link: `/projects/${projectId}/tasks`,
         },
         tx
       );
-
-      if (notif) {
-        sendToUser(input.assigneeId, 'notification:new', notif);
-      }
+      if (notif) notifs.push(notif);
     }
 
-    return createdTask;
+    return { task: createdTask, notifs };
   });
 
-  // Broadcast real-time event to project channel
+  // Only announce changes after the transaction has committed
   broadcastToProject(projectId, 'task:created', task);
+  notifs.forEach((n) => sendToUser(n.userId, 'notification:new', n));
 
   return task;
 }
@@ -119,14 +205,16 @@ export async function getTasks(projectId: string, query: GetTasksQuery) {
   };
 }
 
-export async function getTaskById(taskId: string) {
+export async function getTaskById(taskId: string, includeInternal: boolean) {
   const task = await prisma.task.findUnique({
     where: { id: taskId },
     include: {
       project: { select: { id: true, name: true } },
       assignee: { select: { id: true, name: true, email: true } },
       createdBy: { select: { id: true, name: true, email: true } },
+      requester: { select: { id: true, name: true, email: true } },
       comments: {
+        where: includeInternal ? undefined : { isInternal: false },
         orderBy: { createdAt: 'asc' },
         include: {
           user: { select: { id: true, name: true, email: true } },
@@ -142,24 +230,52 @@ export async function getTaskById(taskId: string) {
   return task;
 }
 
-export async function updateTask(actorUserId: string, taskId: string, input: UpdateTaskInput) {
-  const { updatedTask, projectId, newNotif } = await prisma.$transaction(async (tx) => {
-    const existingTask = await tx.task.findUnique({
+export async function updateTask(
+  actorUserId: string,
+  taskId: string,
+  input: UpdateTaskInput,
+  actorIsLead = false
+) {
+  const { updatedTask, projectId, notifs } = await prisma.$transaction(async (tx) => {
+    const existing = await tx.task.findUnique({
       where: { id: taskId },
-      include: {
-        project: { select: { name: true } },
-        assignee: { select: { id: true, name: true, email: true } },
-        createdBy: { select: { id: true, name: true, email: true } },
-      },
+      include: { project: { select: { name: true, isArchived: true } } },
     });
-
-    if (!existingTask) {
+    if (!existing) {
       throw new AppError('Task not found.', 404);
     }
+    if (existing.project.isArchived) {
+      throw new AppError('This project is archived and read-only.', 403);
+    }
 
-    const dataToUpdate: any = {
-      version: { increment: 1 },
-    };
+    const nextStatus = input.status ?? existing.status;
+    const statusChanging = input.status !== undefined && input.status !== existing.status;
+    const assigneeChanging = input.assigneeId !== undefined && input.assigneeId !== existing.assigneeId;
+    const priorityChanging = input.priority !== undefined && input.priority !== existing.priority;
+
+    // ---- Business rules (enforced here, not just in the UI) ----
+    if (statusChanging && nextStatus === TaskStatus.ESCALATED) {
+      throw new AppError('Use the escalation endpoint to escalate a ticket.', 400);
+    }
+    if (statusChanging && nextStatus === TaskStatus.CLOSED && !actorIsLead) {
+      throw new AppError('Only a Project Manager can close tickets.', 403);
+    }
+    if (statusChanging && existing.status === TaskStatus.CLOSED && !actorIsLead) {
+      throw new AppError('Only a Project Manager can reopen a closed ticket.', 403);
+    }
+    if (assigneeChanging && !actorIsLead) {
+      throw new AppError('Only a Project Manager can assign or reassign tickets.', 403);
+    }
+    if (priorityChanging && !actorIsLead) {
+      throw new AppError('Only a Project Manager can change ticket priority (it controls the SLA).', 403);
+    }
+    if (assigneeChanging && input.assigneeId) {
+      await assertAssignable(tx, existing.projectId, input.assigneeId);
+    }
+
+    // ---- Build the update ----
+    const now = new Date();
+    const dataToUpdate: any = { version: { increment: 1 } };
 
     if (input.title !== undefined) dataToUpdate.title = input.title;
     if (input.description !== undefined) dataToUpdate.description = input.description;
@@ -167,12 +283,36 @@ export async function updateTask(actorUserId: string, taskId: string, input: Upd
     if (input.priority !== undefined) dataToUpdate.priority = input.priority;
     if (input.assigneeId !== undefined) dataToUpdate.assigneeId = input.assigneeId;
     if (input.dueDate !== undefined) dataToUpdate.dueDate = input.dueDate;
+    if (input.category !== undefined) dataToUpdate.category = input.category;
 
+    // ---- Lifecycle timestamps (all KPI metrics are computed from these) ----
+    const reopening = statusChanging && isFinished(existing.status) && !isFinished(nextStatus);
+
+    if (statusChanging && nextStatus === TaskStatus.DONE) {
+      dataToUpdate.resolvedAt = now;
+      dataToUpdate.closedAt = null;
+    } else if (statusChanging && nextStatus === TaskStatus.CLOSED) {
+      dataToUpdate.closedAt = now;
+      if (!existing.resolvedAt) dataToUpdate.resolvedAt = now;
+    } else if (reopening) {
+      // Reopen restarts the SLA clock, otherwise the old deadline would breach instantly
+      const policy = await getSlaPolicy(tx, existing.projectId, input.priority ?? existing.priority);
+      dataToUpdate.reopenCount = { increment: 1 };
+      dataToUpdate.resolvedAt = null;
+      dataToUpdate.closedAt = null;
+      dataToUpdate.slaBreachedAt = null;
+      dataToUpdate.slaResolveDueAt = policy ? new Date(now.getTime() + policy.resolveMinutes * MINUTE) : null;
+    }
+
+    // Priority change on an open ticket: recalculate deadlines from the original creation time
+    if (priorityChanging && !isFinished(existing.status)) {
+      const policy = await getSlaPolicy(tx, existing.projectId, input.priority!);
+      Object.assign(dataToUpdate, slaDatesFrom(existing.createdAt, policy));
+    }
+
+    // ---- Optimistic locking (unchanged idea: stale version => 409) ----
     const result = await tx.task.updateMany({
-      where: {
-        id: taskId,
-        version: input.version,
-      },
+      where: { id: taskId, version: input.version },
       data: dataToUpdate,
     });
 
@@ -182,6 +322,7 @@ export async function updateTask(actorUserId: string, taskId: string, input: Upd
         include: {
           assignee: { select: { id: true, name: true, email: true } },
           createdBy: { select: { id: true, name: true, email: true } },
+          requester: { select: { id: true, name: true, email: true } },
         },
       });
 
@@ -196,67 +337,76 @@ export async function updateTask(actorUserId: string, taskId: string, input: Upd
       include: {
         assignee: { select: { id: true, name: true, email: true } },
         createdBy: { select: { id: true, name: true, email: true } },
+        requester: { select: { id: true, name: true, email: true } },
       },
     });
 
     await recordActivity(
       {
         userId: actorUserId,
-        projectId: existingTask.projectId,
+        projectId: existing.projectId,
         action: 'TASK_UPDATED',
         entityType: 'Task',
         entityId: taskId,
         metadata: {
           previousVersion: input.version,
           newVersion: updated!.version,
+          ticketNumber: updated!.ticketNumber,
           changes: input,
+          ...(statusChanging ? { statusFrom: existing.status, statusTo: nextStatus } : {}),
+          ...(reopening ? { reopened: true } : {}),
         },
       },
       tx
     );
 
-    let notifCreated: any = null;
+    // ---- Notifications (collected, sent after commit) ----
+    const notifs: any[] = [];
+    const link = `/projects/${existing.projectId}/tasks`;
+    const ref = `#${updated!.ticketNumber} "${updated!.title}"`;
 
-    if (input.assigneeId && input.assigneeId !== existingTask.assigneeId) {
-      notifCreated = await createNotification(
+    if (assigneeChanging && input.assigneeId) {
+      const n = await createNotification(
         {
           userId: input.assigneeId,
           actorUserId,
           type: 'TASK_ASSIGNED',
-          title: 'Task Assigned to You',
-          message: `You were assigned to task "${updated!.title}" in "${existingTask.project.name}"`,
-          link: `/projects/${existingTask.projectId}/tasks`,
+          title: 'Ticket Assigned to You',
+          message: `You were assigned ticket ${ref} in "${existing.project.name}"`,
+          link,
         },
         tx
       );
+      if (n) notifs.push(n);
     }
 
-    if (input.status && input.status !== existingTask.status && updated?.assigneeId) {
-      notifCreated = await createNotification(
-        {
-          userId: updated.assigneeId,
-          actorUserId,
-          type: 'TASK_STATUS_CHANGED',
-          title: 'Task Status Updated',
-          message: `Task "${updated.title}" status changed to ${updated.status}`,
-          link: `/projects/${existingTask.projectId}/tasks`,
-        },
-        tx
-      );
+    if (statusChanging) {
+      const recipients = new Set<string>();
+      if (updated!.assigneeId) recipients.add(updated!.assigneeId);
+      if (nextStatus === TaskStatus.DONE && updated!.requesterId) recipients.add(updated!.requesterId);
+      if (assigneeChanging && input.assigneeId) recipients.delete(input.assigneeId); // already notified above
+
+      for (const userId of Array.from(recipients)) {
+        const n = await createNotification(
+          {
+            userId,
+            actorUserId,
+            type: 'TASK_STATUS_CHANGED',
+            title: 'Ticket Status Updated',
+            message: `Ticket ${ref} status changed to ${updated!.status}`,
+            link,
+          },
+          tx
+        );
+        if (n) notifs.push(n);
+      }
     }
 
-    return {
-      updatedTask: updated!,
-      projectId: existingTask.projectId,
-      newNotif: notifCreated,
-    };
+    return { updatedTask: updated!, projectId: existing.projectId, notifs };
   });
 
-  // Broadcast real-time events
   broadcastToProject(projectId, 'task:updated', updatedTask);
-  if (newNotif) {
-    sendToUser(newNotif.userId, 'notification:new', newNotif);
-  }
+  notifs.forEach((n) => sendToUser(n.userId, 'notification:new', n));
 
   return updatedTask;
 }
@@ -264,12 +414,10 @@ export async function updateTask(actorUserId: string, taskId: string, input: Upd
 export async function updateTaskStatus(
   actorUserId: string,
   taskId: string,
-  input: UpdateTaskStatusInput
-) {
-  return updateTask(actorUserId, taskId, {
-    version: input.version,
-    status: input.status,
-  });
+  input: UpdateTaskStatusInput,
+  actorIsLead = false
+){
+  return updateTask(actorUserId, taskId, { version: input.version, status: input.status }, actorIsLead);
 }
 
 export async function deleteTask(actorUserId: string, taskId: string) {
