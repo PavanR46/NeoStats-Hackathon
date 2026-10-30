@@ -57,6 +57,7 @@ model User {
   requestedTickets    Task[]       @relation("RequestedTickets")
   escalationsMade     Escalation[] @relation("EscalatedBy")
   escalationsReceived Escalation[] @relation("EscalatedTo")
+  escalationsFrom     Escalation[] @relation("EscalatedFrom")
 }
 
 model Project {
@@ -189,14 +190,17 @@ model Escalation {
   reason         String
   escalatedById  String?        // null = automated system worker
   escalatedToId  String?
+  fromAssigneeId String?        // the agent who owned the ticket before it was escalated
   createdAt      DateTime       @default(now())
 
   task           Task           @relation(fields: [taskId], references: [id], onDelete: Cascade)
   escalatedBy    User?          @relation("EscalatedBy", fields: [escalatedById], references: [id], onDelete: SetNull)
   escalatedTo    User?          @relation("EscalatedTo", fields: [escalatedToId], references: [id], onDelete: SetNull)
+  fromAssignee   User?          @relation("EscalatedFrom", fields: [fromAssigneeId], references: [id], onDelete: SetNull)
 
   @@index([taskId])
   @@index([createdAt])
+  @@index([fromAssigneeId])
 }
 
 model KpiTarget {
