@@ -41,11 +41,11 @@ export interface GetTasksQuery {
   limit?: number;
 }
 
-const MINUTE = 60_000;
+export const MINUTE = 60_000;
 type Db = Prisma.TransactionClient;
 
 // Team-specific SLA policy first, then the global default (projectId = null)
-async function getSlaPolicy(db: Db, projectId: string, priority: TaskPriority) {
+export async function getSlaPolicy(db: Db, projectId: string, priority: TaskPriority) {
   const specific = await db.slaPolicy.findFirst({ where: { projectId, priority } });
   if (specific) return specific;
   return db.slaPolicy.findFirst({ where: { projectId: null, priority } });
@@ -67,7 +67,7 @@ async function assertAssignable(db: Db, projectId: string, userId: string) {
   }
 }
 
-const isFinished = (s: TaskStatus) => s === TaskStatus.DONE || s === TaskStatus.CLOSED;
+export const isFinished = (s: TaskStatus) => s === TaskStatus.DONE || s === TaskStatus.CLOSED;
 
 export async function createTask(creatorId: string, projectId: string, input: CreateTaskInput) {
   const { task, notifs } = await prisma.$transaction(async (tx) => {
@@ -101,8 +101,8 @@ export async function createTask(creatorId: string, projectId: string, input: Cr
         projectId,
         title: input.title,
         description: input.description,
-        status: input.status,
-        priority: input.priority,
+        status,
+        priority,
         version: 1,
         createdById: creatorId,
         requesterId: input.requesterId ?? creatorId,
@@ -155,7 +155,6 @@ export async function createTask(creatorId: string, projectId: string, input: Cr
     return { task: createdTask, notifs };
   });
 
-  // Only announce changes after the transaction has committed
   broadcastToProject(projectId, 'task:created', task);
   notifs.forEach((n) => sendToUser(n.userId, 'notification:new', n));
 
@@ -234,7 +233,7 @@ export async function updateTask(
   actorUserId: string,
   taskId: string,
   input: UpdateTaskInput,
-  actorIsLead = false
+  actorIsLead: boolean = false
 ) {
   const { updatedTask, projectId, notifs } = await prisma.$transaction(async (tx) => {
     const existing = await tx.task.findUnique({
@@ -253,7 +252,7 @@ export async function updateTask(
     const assigneeChanging = input.assigneeId !== undefined && input.assigneeId !== existing.assigneeId;
     const priorityChanging = input.priority !== undefined && input.priority !== existing.priority;
 
-    // ---- Business rules (enforced here, not just in the UI) ----
+    // ---- Business rules ----
     if (statusChanging && nextStatus === TaskStatus.ESCALATED) {
       throw new AppError('Use the escalation endpoint to escalate a ticket.', 400);
     }
@@ -285,7 +284,7 @@ export async function updateTask(
     if (input.dueDate !== undefined) dataToUpdate.dueDate = input.dueDate;
     if (input.category !== undefined) dataToUpdate.category = input.category;
 
-    // ---- Lifecycle timestamps (all KPI metrics are computed from these) ----
+    // ---- Lifecycle timestamps ----
     const reopening = statusChanging && isFinished(existing.status) && !isFinished(nextStatus);
 
     if (statusChanging && nextStatus === TaskStatus.DONE) {
@@ -295,7 +294,6 @@ export async function updateTask(
       dataToUpdate.closedAt = now;
       if (!existing.resolvedAt) dataToUpdate.resolvedAt = now;
     } else if (reopening) {
-      // Reopen restarts the SLA clock, otherwise the old deadline would breach instantly
       const policy = await getSlaPolicy(tx, existing.projectId, input.priority ?? existing.priority);
       dataToUpdate.reopenCount = { increment: 1 };
       dataToUpdate.resolvedAt = null;
@@ -304,13 +302,11 @@ export async function updateTask(
       dataToUpdate.slaResolveDueAt = policy ? new Date(now.getTime() + policy.resolveMinutes * MINUTE) : null;
     }
 
-    // Priority change on an open ticket: recalculate deadlines from the original creation time
     if (priorityChanging && !isFinished(existing.status)) {
       const policy = await getSlaPolicy(tx, existing.projectId, input.priority!);
       Object.assign(dataToUpdate, slaDatesFrom(existing.createdAt, policy));
     }
 
-    // ---- Optimistic locking (unchanged idea: stale version => 409) ----
     const result = await tx.task.updateMany({
       where: { id: taskId, version: input.version },
       data: dataToUpdate,
@@ -360,7 +356,6 @@ export async function updateTask(
       tx
     );
 
-    // ---- Notifications (collected, sent after commit) ----
     const notifs: any[] = [];
     const link = `/projects/${existing.projectId}/tasks`;
     const ref = `#${updated!.ticketNumber} "${updated!.title}"`;
@@ -384,7 +379,7 @@ export async function updateTask(
       const recipients = new Set<string>();
       if (updated!.assigneeId) recipients.add(updated!.assigneeId);
       if (nextStatus === TaskStatus.DONE && updated!.requesterId) recipients.add(updated!.requesterId);
-      if (assigneeChanging && input.assigneeId) recipients.delete(input.assigneeId); // already notified above
+      if (assigneeChanging && input.assigneeId) recipients.delete(input.assigneeId);
 
       for (const userId of Array.from(recipients)) {
         const n = await createNotification(
@@ -416,7 +411,7 @@ export async function updateTaskStatus(
   taskId: string,
   input: UpdateTaskStatusInput,
   actorIsLead = false
-){
+) {
   return updateTask(actorUserId, taskId, { version: input.version, status: input.status }, actorIsLead);
 }
 

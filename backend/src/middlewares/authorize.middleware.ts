@@ -63,7 +63,7 @@ export function authorize(action: Action, getProjectIdFromReq?: (req: Request) =
 
       // 6. Contextual Constraint Checks
       // Rule: Team Members may ONLY edit or change status of tasks assigned to them
-      if (member.role === ProjectRole.TEAM_MEMBER && (action === 'task:update' || action === 'task:change_status')) {
+      if (member.role === ProjectRole.TEAM_MEMBER && (action === 'task:update' || action === 'task:change_status' || action === 'task:escalate')) {
         let taskAssigneeId = (req as any).targetTask?.assigneeId;
 
         if (!taskAssigneeId && req.params.id) {

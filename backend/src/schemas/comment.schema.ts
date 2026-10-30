@@ -8,7 +8,6 @@ export const createCommentSchema = z.object({
 export const getCommentsQuerySchema = z.object({
   page: z.string().optional().transform((val) => (val ? parseInt(val, 10) : 1)),
   limit: z.string().optional().transform((val) => (val ? parseInt(val, 10) : 20)),
-});
-
+});2
 export type CreateCommentInput = z.infer<typeof createCommentSchema>;
 export type GetCommentsQuery = z.infer<typeof getCommentsQuerySchema>;

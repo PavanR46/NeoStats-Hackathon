@@ -323,6 +323,7 @@ async function main() {
           type: breached ? EscalationType.SLA_BREACH : EscalationType.MANUAL,
           reason: breached ? 'SLA resolution target breached' : 'Needs lead review',
           escalatedToId: pmUser.id,
+          fromAssigneeId: d.who.id,
           createdAt: breached ? resolveDue : new Date(created.getTime() + HOUR),
         },
       });
