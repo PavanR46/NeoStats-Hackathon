@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { escalateTaskController, getTaskEscalationsController } from '../controllers/escalation.controller';
 import {
   createTaskController,
   getTasksController,
@@ -23,6 +24,8 @@ router.get('/', authorize('task:read'), getTasksController);
 router.get('/:id', authorize('task:read'), getTaskByIdController);
 router.patch('/:id', authorize('task:update'), updateTaskController);
 router.patch('/:id/status', authorize('task:change_status'), updateTaskStatusController);
+router.post('/:id/escalate', authorize('task:escalate'), escalateTaskController);
+router.get('/:id/escalations', authorize('task:read'), getTaskEscalationsController);
 router.delete('/:id', authorize('task:delete'), deleteTaskController);
 
 export default router;

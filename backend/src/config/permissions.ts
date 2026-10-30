@@ -22,6 +22,7 @@ export type Action =
   | 'task:delete'
   | 'task:assign'
   | 'task:change_status'
+  | 'task:escalate'
   // Comment Actions
   | 'comment:create'
   | 'comment:read'
@@ -44,6 +45,7 @@ const PROJECT_ROLE_PERMISSIONS: Record<ProjectRole, Set<Action>> = {
     'task:update',
     'task:delete',
     'task:assign',
+    'task:escalate',
     'task:change_status',
     'comment:create',
     'comment:read',
@@ -56,6 +58,7 @@ const PROJECT_ROLE_PERMISSIONS: Record<ProjectRole, Set<Action>> = {
     'task:read',
     'task:update', // Subject to assignment check in authorize middleware
     'task:change_status', // Subject to assignment check in authorize middleware
+    'task:escalate', // Subject to assignment check in authorize middleware
     'comment:create',
     'comment:read',
     'comment:delete', // Subject to ownership check in authorize middleware

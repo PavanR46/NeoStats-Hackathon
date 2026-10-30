@@ -20,7 +20,7 @@ function canSeeInternal(req: Request) {
 
 export async function createTaskController(req: Request, res: Response, next: NextFunction) {
   try {
-        if (!req.params.projectId) {
+    if (!req.params.projectId) {
       throw new AppError('Use /api/projects/:projectId/tasks for this operation.', 400);
     }
     const input = createTaskSchema.parse(req.body);
@@ -33,7 +33,7 @@ export async function createTaskController(req: Request, res: Response, next: Ne
 
 export async function getTasksController(req: Request, res: Response, next: NextFunction) {
   try {
-        if (!req.params.projectId) {
+    if (!req.params.projectId) {
       throw new AppError('Use /api/projects/:projectId/tasks for this operation.', 400);
     }
     const query = getTasksQuerySchema.parse(req.query);
@@ -56,7 +56,8 @@ export async function getTaskByIdController(req: Request, res: Response, next: N
 export async function updateTaskController(req: Request, res: Response, next: NextFunction) {
   try {
     const input = updateTaskSchema.parse(req.body);
-    const task = await taskService.updateTask(req.user!.id, req.params.id, input);
+    // FIXED: Passed isLead(req) so authorized PMs/Admins can perform updates
+    const task = await taskService.updateTask(req.user!.id, req.params.id, input, isLead(req));
     return res.status(200).json({ message: 'Task updated successfully', task });
   } catch (error) {
     next(error);
@@ -66,7 +67,8 @@ export async function updateTaskController(req: Request, res: Response, next: Ne
 export async function updateTaskStatusController(req: Request, res: Response, next: NextFunction) {
   try {
     const input = updateTaskStatusSchema.parse(req.body);
-    const task = await taskService.updateTaskStatus(req.user!.id, req.params.id, input);
+    // FIXED: Passed isLead(req) so authorized PMs/Admins can update statuses/close tickets
+    const task = await taskService.updateTaskStatus(req.user!.id, req.params.id, input, isLead(req));
     return res.status(200).json({ message: 'Task status updated successfully', task });
   } catch (error) {
     next(error);
