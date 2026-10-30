@@ -3,6 +3,7 @@ import request from 'supertest';
 import app from '../src/app';
 import { prisma } from '../src/db/prisma';
 import bcrypt from 'bcrypt';
+import { runSlaCheck } from '../src/jobs/sla.worker';
 
 describe('Optimistic Concurrency & Permission Boundary Integration Tests', () => {
     let adminCookie: string;
@@ -298,5 +299,135 @@ describe('Optimistic Concurrency & Permission Boundary Integration Tests', () =>
       .post(`/api/projects/${testProjectId}/tasks`).set('Cookie', pmCookie)
       .send({ title: 'Bad assignment', assigneeId: viewer!.id });
     expect(res.status).toBe(400);
+  });
+    it('16. PM CAN assign, reprioritise and close a ticket (the allowed path)', async () => {
+    const t = await mkTicket();
+    const assign = await request(app)
+      .patch(`/api/tasks/${t.id}`).set('Cookie', pmCookie)
+      .send({ version: t.version, assigneeId: memberUserId, priority: 'URGENT' });
+    expect(assign.status).toBe(200);
+    expect(assign.body.task.assigneeId).toBe(memberUserId);
+    expect(assign.body.task.priority).toBe('URGENT');
+
+    const closed = await request(app)
+      .patch(`/api/tasks/${t.id}/status`).set('Cookie', pmCookie)
+      .send({ version: assign.body.task.version, status: 'CLOSED' });
+    expect(closed.status).toBe(200);
+    expect(closed.body.task.closedAt).not.toBeNull();
+  });
+
+  it('17. Changing priority recalculates the SLA deadline', async () => {
+    const t = await mkTicket({ priority: 'LOW' }); // 4320 min
+    const res = await request(app)
+      .patch(`/api/tasks/${t.id}`).set('Cookie', pmCookie)
+      .send({ version: t.version, priority: 'URGENT' }); // 240 min
+    const minutes =
+      (new Date(res.body.task.slaResolveDueAt).getTime() - new Date(res.body.task.createdAt).getTime()) / 60000;
+    expect(Math.round(minutes)).toBe(240);
+  });
+    it('18. Assigned agent escalates manually: level 2, ESCALATED, moved to the PM, history kept', async () => {
+    const t = await mkTicket({ assigneeId: memberUserId });
+    const res = await request(app)
+      .post(`/api/tasks/${t.id}/escalate`).set('Cookie', memberCookie)
+      .send({ version: t.version, reason: 'Customer is waiting, need lead help' });
+    expect(res.status).toBe(200);
+    expect(res.body.task.status).toBe('ESCALATED');
+    expect(res.body.task.escalationLevel).toBe(2);
+    expect(res.body.task.assigneeId).toBe(pmUserId);
+
+    const history = await request(app).get(`/api/tasks/${t.id}/escalations`).set('Cookie', pmCookie);
+    expect(history.status).toBe(200);
+    expect(history.body.escalations).toHaveLength(1);
+    expect(history.body.escalations[0].type).toBe('MANUAL');
+    expect(history.body.escalations[0].fromAssigneeId).toBe(memberUserId);
+  });
+
+  it('19. Escalation requires a real reason', async () => {
+    const t = await mkTicket({ assigneeId: memberUserId });
+    const res = await request(app)
+      .post(`/api/tasks/${t.id}/escalate`).set('Cookie', memberCookie)
+      .send({ version: t.version, reason: 'no' });
+    expect(res.status).toBe(400);
+  });
+
+  it('20. Viewers and members who do not own the ticket cannot escalate', async () => {
+    const t = await mkTicket(); // unassigned
+    const body = { version: t.version, reason: 'Trying to escalate this' };
+
+    const asViewer = await request(app).post(`/api/tasks/${t.id}/escalate`).set('Cookie', viewerCookie).send(body);
+    expect(asViewer.status).toBe(403);
+
+    const asMember = await request(app).post(`/api/tasks/${t.id}/escalate`).set('Cookie', memberCookie).send(body);
+    expect(asMember.status).toBe(403);
+  });
+
+  it('21. Escalating with a stale version returns 409', async () => {
+    const t = await mkTicket({ assigneeId: memberUserId });
+    await request(app)
+      .patch(`/api/tasks/${t.id}`).set('Cookie', pmCookie)
+      .send({ version: t.version, title: 'Edited meanwhile' });
+
+    const res = await request(app)
+      .post(`/api/tasks/${t.id}/escalate`).set('Cookie', memberCookie)
+      .send({ version: t.version, reason: 'Need help from the lead' });
+    expect(res.status).toBe(409);
+  });
+
+  it('22. A ticket can be escalated at most to level 3', async () => {
+    const t = await mkTicket({ assigneeId: memberUserId });
+    const first = await request(app)
+      .post(`/api/tasks/${t.id}/escalate`).set('Cookie', memberCookie)
+      .send({ version: t.version, reason: 'Needs lead attention' });
+    expect(first.status).toBe(200);
+
+    const second = await request(app)
+      .post(`/api/tasks/${t.id}/escalate`).set('Cookie', pmCookie)
+      .send({ version: first.body.task.version, reason: 'Needs an admin decision' });
+    expect(second.status).toBe(200);
+    expect(second.body.task.escalationLevel).toBe(3);
+
+    const third = await request(app)
+      .post(`/api/tasks/${t.id}/escalate`).set('Cookie', pmCookie)
+      .send({ version: second.body.task.version, reason: 'One more try' });
+    expect(third.status).toBe(400);
+  });
+
+  it('23. SLA worker escalates an overdue ticket exactly once', async () => {
+    const t = await mkTicket({ assigneeId: memberUserId });
+    await prisma.task.update({
+      where: { id: t.id },
+      data: { slaResolveDueAt: new Date(Date.now() - 60_000) },
+    });
+
+    const first = await runSlaCheck();
+    expect(first.escalated).toBeGreaterThanOrEqual(1);
+
+    const after = await prisma.task.findUnique({ where: { id: t.id } });
+    expect(after!.status).toBe('ESCALATED');
+    expect(after!.escalationLevel).toBe(2);
+
+    const rows = await prisma.escalation.findMany({ where: { taskId: t.id } });
+    expect(rows).toHaveLength(1);
+    expect(rows[0].type).toBe('SLA_BREACH');
+    expect(rows[0].escalatedById).toBeNull(); // done by the system
+    expect(rows[0].fromAssigneeId).toBe(memberUserId);
+
+    await runSlaCheck(); // second pass must not escalate it again
+    expect(await prisma.escalation.count({ where: { taskId: t.id } })).toBe(1);
+  });
+
+  it('24. At the highest level the worker only flags the breach (no new escalation)', async () => {
+    const t = await mkTicket({ assigneeId: memberUserId });
+    await prisma.task.update({
+      where: { id: t.id },
+      data: { escalationLevel: 3, slaResolveDueAt: new Date(Date.now() - 60_000) },
+    });
+
+    const r = await runSlaCheck();
+    expect(r.markedOnly).toBeGreaterThanOrEqual(1);
+
+    const after = await prisma.task.findUnique({ where: { id: t.id } });
+    expect(after!.slaBreachedAt).not.toBeNull();
+    expect(await prisma.escalation.count({ where: { taskId: t.id } })).toBe(0);
   });
 });
