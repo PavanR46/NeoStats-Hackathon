@@ -11,6 +11,7 @@ import notificationRoutes from './routes/notification.routes';
 import activityRoutes from './routes/activity.routes';
 import escalationRoutes from './routes/escalation.routes';
 import { errorHandler, AppError } from './middlewares/error.middleware';
+import performanceRoutes from './routes/performance.routes';
 
 const app = express();
 
@@ -55,6 +56,7 @@ app.use('/api/comments', commentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/escalations', escalationRoutes);
+app.use('/api/performance', performanceRoutes);
 
 // Catch 404 for unknown endpoints
 app.use((_req, _res, next) => {
