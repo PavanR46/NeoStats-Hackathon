@@ -430,4 +430,100 @@ describe('Optimistic Concurrency & Permission Boundary Integration Tests', () =>
     expect(after!.slaBreachedAt).not.toBeNull();
     expect(await prisma.escalation.count({ where: { taskId: t.id } })).toBe(0);
   });
+    it('25. Matrix computes the expected numbers for an isolated agent (admin view)', async () => {
+    // A brand-new agent, so tickets from earlier tests cannot pollute the numbers
+    const hash = await bcrypt.hash('password123', 10);
+    const agent = await prisma.user.create({
+      data: { email: 'perfagent@neostats.com', password: hash, name: 'Perf Agent', globalRole: 'USER' },
+    });
+    await prisma.projectMember.create({
+      data: { projectId: testProjectId, userId: agent.id, role: 'TEAM_MEMBER' },
+    });
+    await prisma.kpiTarget.createMany({
+      data: [
+        { metric: 'SLA_COMPLIANCE', target: 90, weight: 3, higherIsBetter: true },
+        { metric: 'AVG_RESOLUTION_HOURS', target: 24, weight: 2, higherIsBetter: false },
+        { metric: 'AVG_FIRST_RESPONSE_MINUTES', target: 120, weight: 2, higherIsBetter: false },
+        { metric: 'ESCALATION_RATE', target: 10, weight: 2, higherIsBetter: false },
+        { metric: 'REOPEN_RATE', target: 5, weight: 1, higherIsBetter: false },
+      ],
+    });
+
+    const H = 3_600_000;
+    const MIN = 60_000;
+    const mk = (hoursAgo: number, priority: any, frMin: number, resolveHrs: number, dueHrs: number, extra: any = {}) => {
+      const created = new Date(Date.now() - hoursAgo * H);
+      return prisma.task.create({
+        data: {
+          projectId: testProjectId,
+          title: 'Perf ticket',
+          priority,
+          status: 'DONE',
+          createdById: pmUserId,
+          assigneeId: agent.id,
+          createdAt: created,
+          firstResponseAt: new Date(created.getTime() + frMin * MIN),
+          resolvedAt: new Date(created.getTime() + resolveHrs * H),
+          slaResolveDueAt: new Date(created.getTime() + dueHrs * H),
+          ...extra,
+        },
+      });
+    };
+
+    await mk(10, 'HIGH', 30, 5, 8); // resolved in 5h, due 8h: on time
+    const late = await mk(20, 'URGENT', 60, 10, 4, { reopenCount: 1 }); // resolved in 10h, due 4h: late, reopened
+    await prisma.escalation.create({
+      data: {
+        taskId: late.id,
+        fromLevel: 1,
+        toLevel: 2,
+        type: 'SLA_BREACH',
+        reason: 'SLA breached',
+        fromAssigneeId: agent.id,
+        escalatedToId: pmUserId,
+      },
+    });
+
+    const res = await request(app).get('/api/performance/matrix').set('Cookie', adminCookie);
+    expect(res.status).toBe(200);
+
+    const row = res.body.rows.find((r: any) => r.userId === agent.id);
+    expect(row.counts).toEqual({ handled: 2, resolved: 2, escalatedAway: 1 });
+    expect(row.lowSample).toBe(true);
+    expect(row.metrics.SLA_COMPLIANCE.value).toBeCloseTo(50, 1);
+    expect(row.metrics.AVG_FIRST_RESPONSE_MINUTES.value).toBeCloseTo(45, 1);
+    expect(row.metrics.AVG_RESOLUTION_HOURS.value).toBeCloseTo(7.5, 1);
+    expect(row.metrics.ESCALATION_RATE.value).toBeCloseTo(50, 1);
+    expect(row.metrics.REOPEN_RATE.value).toBeCloseTo(50, 1);
+    expect(row.score).toBeCloseTo(61.7, 0);
+  });
+
+  it('26. Anonymous users are rejected; members and viewers only ever see their own row', async () => {
+    const anon = await request(app).get('/api/performance/matrix');
+    expect(anon.status).toBe(401);
+
+    const asMember = await request(app).get('/api/performance/matrix').set('Cookie', memberCookie);
+    expect(asMember.status).toBe(200);
+    expect(asMember.body.scope).toBe('SELF');
+    expect(asMember.body.rows).toHaveLength(1);
+    expect(asMember.body.rows[0].userId).toBe(memberUserId);
+
+    const asViewer = await request(app).get('/api/performance/matrix').set('Cookie', viewerCookie);
+    expect(asViewer.body.rows).toHaveLength(1);
+  });
+
+  it('27. A PM sees the people in their teams, and asking for another team is 403', async () => {
+    const ok = await request(app).get('/api/performance/matrix').set('Cookie', pmCookie);
+    expect(ok.status).toBe(200);
+    expect(ok.body.scope).toBe('TEAM');
+    expect(ok.body.rows.some((r: any) => r.userId === memberUserId)).toBe(true);
+
+    const other = await request(app)
+      .post('/api/projects').set('Cookie', adminCookie)
+      .send({ name: 'Perf Other Team' });
+    const denied = await request(app)
+      .get(`/api/performance/matrix?projectId=${other.body.project.id}`)
+      .set('Cookie', pmCookie);
+    expect(denied.status).toBe(403);
+  });
 });
