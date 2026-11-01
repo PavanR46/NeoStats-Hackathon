@@ -160,9 +160,9 @@ export default function PMConsolePage() {
 
           <button
             onClick={() => setIsProjectModalOpen(true)}
-            className="inline-flex items-center space-x-2 px-5 py-3 rounded-2xl bg-white text-brand-900 hover:bg-brand-50 font-bold text-sm shadow-lg transition-all transform hover:-translate-y-0.5 active:translate-y-0 self-start sm:self-auto"
+            className="inline-flex items-center space-x-2 px-5 py-3 rounded-2xl bg-surface text-accent hover:bg-accent/10 font-bold text-sm shadow-lg transition-all transform hover:-translate-y-0.5 active:translate-y-0 self-start sm:self-auto"
           >
-            <FolderPlus className="h-4 w-4 text-brand-600" />
+            <FolderPlus className="h-4 w-4 text-accent" />
             <span>Create New Project</span>
           </button>
         </div>
@@ -170,39 +170,39 @@ export default function PMConsolePage() {
 
       {/* PM Overview Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div className="bg-surface p-5 rounded-2xl border border-line shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Projects</p>
-            <p className="text-2xl font-bold text-slate-900 mt-1">{activeProjectsCount}</p>
-            <p className="text-[11px] text-emerald-600 font-medium mt-1 flex items-center gap-1">
+            <p className="text-xs font-semibold text-fg-muted uppercase tracking-wider">Active Projects</p>
+            <p className="text-2xl font-bold text-fg mt-1">{activeProjectsCount}</p>
+            <p className="text-[11px] text-success font-medium mt-1 flex items-center gap-1">
               <CheckCircle2 className="h-3 w-3" /> Live & Tracked
             </p>
           </div>
-          <div className="h-12 w-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
+          <div className="h-12 w-12 rounded-xl bg-accent/10 text-accent flex items-center justify-center">
             <FolderKanban className="h-6 w-6" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div className="bg-surface p-5 rounded-2xl border border-line shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Archived Workstreams</p>
-            <p className="text-2xl font-bold text-slate-900 mt-1">{archivedProjectsCount}</p>
-            <p className="text-[11px] text-slate-500 mt-1">Completed / Suspended</p>
+            <p className="text-xs font-semibold text-fg-muted uppercase tracking-wider">Archived Workstreams</p>
+            <p className="text-2xl font-bold text-fg mt-1">{archivedProjectsCount}</p>
+            <p className="text-[11px] text-fg-muted mt-1">Completed / Suspended</p>
           </div>
-          <div className="h-12 w-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+          <div className="h-12 w-12 rounded-xl bg-warning/10 text-warning flex items-center justify-center">
             <Archive className="h-6 w-6" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div className="bg-surface p-5 rounded-2xl border border-line shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Managed Roster</p>
-            <p className="text-2xl font-bold text-slate-900 mt-1">
+            <p className="text-xs font-semibold text-fg-muted uppercase tracking-wider">Managed Roster</p>
+            <p className="text-2xl font-bold text-fg mt-1">
               {projectsList.reduce((acc: number, p: any) => acc + (p._count?.members || 0), 0)}
             </p>
-            <p className="text-[11px] text-slate-500 mt-1">Total Member Assignments</p>
+            <p className="text-[11px] text-fg-muted mt-1">Total Member Assignments</p>
           </div>
-          <div className="h-12 w-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+          <div className="h-12 w-12 rounded-xl bg-plum/10 text-plum flex items-center justify-center">
             <Users className="h-6 w-6" />
           </div>
         </div>
@@ -213,23 +213,23 @@ export default function PMConsolePage() {
         
         {/* Managed Projects Control (2 Cols) */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface p-4 rounded-2xl border border-line shadow-sm">
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-fg-subtle" />
               <input
                 type="text"
                 placeholder="Search projects..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-brand-500"
+                className="w-full bg-surface-2 border border-line rounded-xl pl-10 pr-4 py-2 text-sm text-fg placeholder-fg-subtle focus:outline-none focus:bg-surface focus:border-accent/60"
               />
             </div>
 
-            <div className="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
+            <div className="flex items-center space-x-1.5 bg-surface-2 p-1 rounded-xl border border-line text-xs">
               <button
                 onClick={() => setFilterArchived(false)}
                 className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                  !filterArchived ? 'bg-white text-slate-900 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900'
+                  !filterArchived ? 'bg-surface text-fg shadow-sm font-semibold' : 'text-fg-muted hover:text-fg'
                 }`}
               >
                 Active Projects
@@ -237,7 +237,7 @@ export default function PMConsolePage() {
               <button
                 onClick={() => setFilterArchived(true)}
                 className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                  filterArchived ? 'bg-amber-600 text-white shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900'
+                  filterArchived ? 'bg-warning text-white shadow-sm font-semibold' : 'text-fg-muted hover:text-fg'
                 }`}
               >
                 Archived
@@ -249,24 +249,24 @@ export default function PMConsolePage() {
           {isProjectsLoading && (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-24 bg-white animate-pulse rounded-2xl border border-slate-200" />
+                <div key={i} className="h-24 bg-surface animate-pulse rounded-2xl border border-line" />
               ))}
             </div>
           )}
 
           {isProjectsError && (
-            <div className="bg-white p-8 rounded-2xl border border-rose-200 text-center space-y-2">
-              <ShieldAlert className="h-8 w-8 text-rose-500 mx-auto" />
-              <p className="text-sm font-semibold text-slate-800">Failed to load PM project list</p>
-              <button onClick={() => refetchProjects()} className="text-xs text-brand-600 hover:underline">Retry</button>
+            <div className="bg-surface p-8 rounded-2xl border border-danger/25 text-center space-y-2">
+              <ShieldAlert className="h-8 w-8 text-danger mx-auto" />
+              <p className="text-sm font-semibold text-fg">Failed to load PM project list</p>
+              <button onClick={() => refetchProjects()} className="text-xs text-accent hover:underline">Retry</button>
             </div>
           )}
 
           {!isProjectsLoading && !isProjectsError && projectsList.length === 0 && (
-            <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center space-y-3">
-              <FolderKanban className="h-10 w-10 text-slate-300 mx-auto" />
-              <h3 className="text-base font-bold text-slate-800">No projects found</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            <div className="bg-surface p-12 rounded-2xl border border-line text-center space-y-3">
+              <FolderKanban className="h-10 w-10 text-fg-subtle mx-auto" />
+              <h3 className="text-base font-bold text-fg">No projects found</h3>
+              <p className="text-xs text-fg-muted max-w-sm mx-auto">
                 Create a project to start assigning team members and managing task workflows.
               </p>
             </div>
@@ -275,21 +275,21 @@ export default function PMConsolePage() {
           {!isProjectsLoading && !isProjectsError && projectsList.map((p: any) => (
             <div
               key={p.id}
-              className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-4"
+              className="bg-surface p-5 rounded-2xl border border-line shadow-sm hover:shadow-md transition-all space-y-4"
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2">
-                    <h3 className="text-lg font-bold text-slate-900 hover:text-brand-600 transition-colors">
+                    <h3 className="text-lg font-bold text-fg hover:text-accent transition-colors">
                       <Link href={`/projects/${p.id}`}>{p.name}</Link>
                     </h3>
                     {p.isArchived && (
-                      <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                      <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-warning/15 text-warning border border-warning/25">
                         Archived
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-500 line-clamp-2">{p.description || 'No description provided.'}</p>
+                  <p className="text-xs text-fg-muted line-clamp-2">{p.description || 'No description provided.'}</p>
                 </div>
 
                 <div className="flex items-center space-x-2 self-start sm:self-auto">
@@ -298,7 +298,7 @@ export default function PMConsolePage() {
                       setSelectedProjectId(p.id);
                       setSelectedProjectName(p.name);
                     }}
-                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200/80 transition-colors"
+                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-plum/10 hover:bg-plum/15 text-plum text-xs font-semibold border border-plum/80 transition-colors"
                   >
                     <Users className="h-3.5 w-3.5" />
                     <span>Roster ({p._count?.members || 0})</span>
@@ -306,7 +306,7 @@ export default function PMConsolePage() {
 
                   <Link
                     href={`/projects/${p.id}`}
-                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-semibold border border-brand-200/80 transition-colors"
+                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-accent/10 hover:bg-accent/15 text-accent text-xs font-semibold border border-accent/80 transition-colors"
                   >
                     <span>Board</span>
                     <ArrowRight className="h-3.5 w-3.5" />
@@ -315,7 +315,7 @@ export default function PMConsolePage() {
                   {!p.isArchived && (
                     <button
                       onClick={() => handleArchiveProject(p.id)}
-                      className="p-1.5 rounded-xl bg-slate-50 hover:bg-amber-50 text-slate-400 hover:text-amber-700 border border-slate-200 transition-colors"
+                      className="p-1.5 rounded-xl bg-surface-2 hover:bg-warning/10 text-fg-subtle hover:text-warning border border-line transition-colors"
                       title="Archive Project"
                     >
                       <Archive className="h-4 w-4" />
@@ -325,8 +325,8 @@ export default function PMConsolePage() {
               </div>
 
               {/* Task Count Details Footer */}
-              <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs text-slate-500">
-                <span>Total Tasks: <strong className="text-slate-800">{p._count?.tasks || 0}</strong></span>
+              <div className="flex items-center justify-between pt-3 border-t border-line text-xs text-fg-muted">
+                <span>Total Tasks: <strong className="text-fg">{p._count?.tasks || 0}</strong></span>
                 <span>Created {new Date(p.createdAt).toLocaleDateString()}</span>
               </div>
             </div>
@@ -335,32 +335,32 @@ export default function PMConsolePage() {
 
         {/* PM Activity Stream (1 Col) */}
         <div className="space-y-4">
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-sm flex items-center space-x-2">
-                <Activity className="h-4 w-4 text-brand-600" />
+          <div className="bg-surface p-5 rounded-2xl border border-line shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <h3 className="font-bold text-fg text-sm flex items-center space-x-2">
+                <Activity className="h-4 w-4 text-accent" />
                 <span>PM Activity Stream</span>
               </h3>
-              <span className="text-[10px] font-bold uppercase text-slate-400">Live</span>
+              <span className="text-[10px] font-bold uppercase text-fg-subtle">Live</span>
             </div>
 
             <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
               {activityData?.data?.map((act: any) => (
-                <div key={act.id} className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs space-y-1">
+                <div key={act.id} className="p-3 rounded-xl bg-surface-2 border border-line text-xs space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold text-slate-900">{act.user?.name || 'Team Member'}</span>
-                    <span className="text-[10px] text-slate-400">
+                    <span className="font-semibold text-fg">{act.user?.name || 'Team Member'}</span>
+                    <span className="text-[10px] text-fg-subtle">
                       {new Date(act.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <p className="text-slate-600">
-                    <span className="font-medium text-brand-600">{act.action}</span> - {act.entityType}
+                  <p className="text-fg-muted">
+                    <span className="font-medium text-accent">{act.action}</span> - {act.entityType}
                   </p>
                 </div>
               ))}
 
               {(!activityData?.data || activityData.data.length === 0) && (
-                <p className="text-xs text-slate-400 text-center py-6">No recent project activity.</p>
+                <p className="text-xs text-fg-subtle text-center py-6">No recent project activity.</p>
               )}
             </div>
           </div>
@@ -370,27 +370,27 @@ export default function PMConsolePage() {
 
       {/* CREATE PROJECT MODAL */}
       {isProjectModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white p-6 rounded-2xl border border-slate-200 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-lg font-bold text-slate-900 flex items-center space-x-2">
-                <FolderPlus className="h-5 w-5 text-brand-600" />
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-surface p-6 rounded-2xl border border-line shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <h3 className="text-lg font-bold text-fg flex items-center space-x-2">
+                <FolderPlus className="h-5 w-5 text-accent" />
                 <span>Create New Project</span>
               </h3>
-              <button onClick={() => setIsProjectModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-700">
+              <button onClick={() => setIsProjectModalOpen(false)} className="p-1 text-fg-subtle hover:text-fg-muted">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {projectFormError && (
-              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+              <div className="p-3 rounded-xl bg-danger/10 border border-danger/25 text-danger text-xs font-medium">
                 {projectFormError}
               </div>
             )}
 
             <form onSubmit={handleCreateProject} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-semibold text-fg-muted uppercase tracking-wider mb-1">
                   Project Title *
                 </label>
                 <input
@@ -399,12 +399,12 @@ export default function PMConsolePage() {
                   placeholder="e.g. Q4 Mobile App Redesign"
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-brand-500"
+                  className="w-full bg-surface-2 border border-line rounded-xl px-3.5 py-2.5 text-sm text-fg focus:outline-none focus:bg-surface focus:border-accent/60"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-semibold text-fg-muted uppercase tracking-wider mb-1">
                   Description
                 </label>
                 <textarea
@@ -412,15 +412,15 @@ export default function PMConsolePage() {
                   placeholder="Summary of project scope and objectives..."
                   value={projectDesc}
                   onChange={(e) => setProjectDesc(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-brand-500 resize-none"
+                  className="w-full bg-surface-2 border border-line rounded-xl px-3.5 py-2.5 text-sm text-fg focus:outline-none focus:bg-surface focus:border-accent/60 resize-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-line">
                 <button
                   type="button"
                   onClick={() => setIsProjectModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-xs font-semibold text-slate-700 hover:bg-slate-200"
+                  className="px-4 py-2.5 rounded-xl bg-surface-2 text-xs font-semibold text-fg-muted hover:bg-line"
                 >
                   Cancel
                 </button>
@@ -439,37 +439,37 @@ export default function PMConsolePage() {
 
       {/* PROJECT ROSTER MANAGEMENT MODAL */}
       {selectedProjectId && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-white p-6 rounded-2xl border border-slate-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-lg bg-surface p-6 rounded-2xl border border-line shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-line pb-3">
               <div>
-                <h3 className="text-base font-bold text-slate-900 flex items-center space-x-2">
-                  <Users className="h-5 w-5 text-indigo-600" />
+                <h3 className="text-base font-bold text-fg flex items-center space-x-2">
+                  <Users className="h-5 w-5 text-plum" />
                   <span>Project Team Roster</span>
                 </h3>
-                <p className="text-xs text-slate-500">{selectedProjectName}</p>
+                <p className="text-xs text-fg-muted">{selectedProjectName}</p>
               </div>
-              <button onClick={() => setSelectedProjectId(null)} className="p-1 text-slate-400 hover:text-slate-700">
+              <button onClick={() => setSelectedProjectId(null)} className="p-1 text-fg-subtle hover:text-fg-muted">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {/* Add Member Form */}
             {memberFormError && (
-              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+              <div className="p-3 rounded-xl bg-danger/10 border border-danger/25 text-danger text-xs font-medium">
                 {memberFormError}
               </div>
             )}
 
-            <form onSubmit={handleAddMember} className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-3">
-              <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Add Team Member</p>
+            <form onSubmit={handleAddMember} className="bg-surface-2 p-3.5 rounded-2xl border border-line space-y-3">
+              <p className="text-xs font-bold text-fg-muted uppercase tracking-wider">Add Team Member</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <div className="sm:col-span-2">
                   <select
                     value={newMemberUserId}
                     onChange={(e) => setNewMemberUserId(e.target.value)}
                     required
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none"
+                    className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-xs text-fg focus:outline-none"
                   >
                     <option value="">Select a user account...</option>
                     {usersData?.data?.map((u: any) => (
@@ -484,7 +484,7 @@ export default function PMConsolePage() {
                   <select
                     value={newMemberRole}
                     onChange={(e) => setNewMemberRole(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none"
+                    className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-xs text-fg focus:outline-none"
                   >
                     <option value="MEMBER">MEMBER</option>
                     <option value="PROJECT_MANAGER">PM</option>
@@ -496,7 +496,7 @@ export default function PMConsolePage() {
               <button
                 type="submit"
                 disabled={isSubmittingMember || !newMemberUserId}
-                className="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-semibold shadow-sm transition-all flex items-center justify-center space-x-1"
+                className="w-full py-2 rounded-xl bg-plum hover:bg-plum disabled:opacity-50 text-white text-xs font-semibold shadow-sm transition-all flex items-center justify-center space-x-1"
               >
                 <UserPlus className="h-3.5 w-3.5" />
                 <span>{isSubmittingMember ? 'Adding...' : 'Add Member to Project'}</span>
@@ -505,28 +505,28 @@ export default function PMConsolePage() {
 
             {/* Current Member Roster List */}
             <div className="space-y-2">
-              <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Current Roster</p>
+              <p className="text-xs font-bold text-fg-muted uppercase tracking-wider">Current Roster</p>
 
-              <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-white">
+              <div className="divide-y divide-line border border-line rounded-2xl overflow-hidden bg-surface">
                 {membersData?.members?.map((m: any) => (
-                  <div key={m.id} className="p-3.5 flex items-center justify-between hover:bg-slate-50">
+                  <div key={m.id} className="p-3.5 flex items-center justify-between hover:bg-surface-2">
                     <div className="flex items-center space-x-3">
                       <div className={`h-8 w-8 rounded-full border flex items-center justify-center font-bold text-xs ${getAvatarColor(m.user?.id)}`}>
                         {getInitials(m.user?.name)}
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-slate-900">{m.user?.name}</p>
-                        <p className="text-[11px] text-slate-500">{m.user?.email}</p>
+                        <p className="text-xs font-bold text-fg">{m.user?.name}</p>
+                        <p className="text-[11px] text-fg-muted">{m.user?.email}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center space-x-2">
-                      <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-plum/10 text-plum border border-plum/25">
                         {m.role}
                       </span>
                       <button
                         onClick={() => handleRemoveMember(m.id)}
-                        className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                        className="p-1 rounded-lg text-fg-subtle hover:text-danger hover:bg-danger/10 transition-colors"
                         title="Remove member"
                       >
                         <UserMinus className="h-4 w-4" />
@@ -536,7 +536,7 @@ export default function PMConsolePage() {
                 ))}
 
                 {(!membersData?.members || membersData.members.length === 0) && (
-                  <p className="text-xs text-slate-400 text-center py-4">No team members assigned yet.</p>
+                  <p className="text-xs text-fg-subtle text-center py-4">No team members assigned yet.</p>
                 )}
               </div>
             </div>
@@ -544,7 +544,7 @@ export default function PMConsolePage() {
             <div className="pt-2 text-right">
               <button
                 onClick={() => setSelectedProjectId(null)}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-xs font-semibold text-slate-700 hover:bg-slate-200"
+                className="px-4 py-2 rounded-xl bg-surface-2 text-xs font-semibold text-fg-muted hover:bg-line"
               >
                 Done
               </button>

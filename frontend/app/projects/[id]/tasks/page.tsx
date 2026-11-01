@@ -181,8 +181,8 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
       {/* Action Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Interactive Kanban Board</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <h2 className="text-xl font-bold text-fg tracking-tight">Interactive Kanban Board</h2>
+          <p className="text-xs text-fg-muted mt-0.5">
             Real-time status updates with Optimistic Concurrency Locking.
           </p>
         </div>
@@ -202,19 +202,19 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
       {isLoading && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-white p-4 rounded-2xl border border-slate-200 animate-pulse h-96" />
+            <div key={i} className="bg-surface p-4 rounded-2xl border border-line animate-pulse h-96" />
           ))}
         </div>
       )}
 
       {/* Error State */}
       {isError && (
-        <div className="bg-white p-8 rounded-2xl border border-rose-200 text-center space-y-3 max-w-md mx-auto shadow-sm">
-          <AlertTriangle className="h-10 w-10 text-rose-500 mx-auto" />
-          <h3 className="text-base font-semibold text-slate-800">Failed to load tasks</h3>
+        <div className="bg-surface p-8 rounded-2xl border border-danger/25 text-center space-y-3 max-w-md mx-auto shadow-sm">
+          <AlertTriangle className="h-10 w-10 text-danger mx-auto" />
+          <h3 className="text-base font-semibold text-fg">Failed to load tasks</h3>
           <button
             onClick={() => refetch()}
-            className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-slate-100 text-xs font-medium text-slate-800 hover:bg-slate-200"
+            className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-surface-2 text-xs font-medium text-fg hover:bg-line"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             <span>Retry</span>
@@ -229,14 +229,14 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
             const columnTasks = tasks.filter((t: any) => t.status === col.id);
 
             return (
-              <div key={col.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col min-h-[500px]">
+              <div key={col.id} className="bg-surface p-4 rounded-2xl border border-line shadow-sm flex flex-col min-h-[500px]">
                 {/* Column Header */}
-                <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                <div className="flex items-center justify-between mb-4 pb-3 border-b border-line">
                   <div className="flex items-center space-x-2">
                     <span className={`h-2.5 w-2.5 rounded-full ${col.style.dot}`} />
-                    <h3 className="text-sm font-bold text-slate-900">{col.title}</h3>
+                    <h3 className="text-sm font-bold text-fg">{col.title}</h3>
                   </div>
-                  <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                  <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-surface-2 text-fg-muted border border-line">
                     {columnTasks.length}
                   </span>
                 </div>
@@ -244,7 +244,7 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                 {/* Cards Container */}
                 <div className="flex-1 space-y-3">
                   {columnTasks.length === 0 && (
-                    <div className="text-center py-8 text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl">
+                    <div className="text-center py-8 text-xs text-fg-subtle border border-dashed border-line rounded-xl">
                       No tasks in {col.title}
                     </div>
                   )}
@@ -261,12 +261,12 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                     return (
                       <div
                         key={task.id}
-                        className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-xs space-y-3 group hover:border-brand-300 hover:shadow-md transition-all"
+                        className="bg-surface p-4 rounded-xl border border-line/90 shadow-xs space-y-3 group hover:border-accent/40 hover:shadow-md transition-all"
                       >
                         <div className="flex items-start justify-between gap-2">
                           <Link
                             href={`/tasks/${task.id}`}
-                            className="text-sm font-semibold text-slate-900 group-hover:text-brand-600 transition-colors line-clamp-2"
+                            className="text-sm font-semibold text-fg group-hover:text-accent transition-colors line-clamp-2"
                           >
                             {task.title}
                           </Link>
@@ -280,10 +280,10 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                         </div>
 
                         {task.description && (
-                          <p className="text-xs text-slate-500 line-clamp-2">{task.description}</p>
+                          <p className="text-xs text-fg-muted line-clamp-2">{task.description}</p>
                         )}
 
-                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <div className="pt-2 border-t border-line flex items-center justify-between text-xs">
                           {/* Assignee Avatar */}
                           {task.assignee ? (
                             <div className="flex items-center space-x-1.5" title={`Assigned to ${task.assignee.name}`}>
@@ -294,24 +294,24 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                               >
                                 {getInitials(task.assignee.name)}
                               </div>
-                              <span className="text-[11px] text-slate-600 truncate max-w-[80px]">
+                              <span className="text-[11px] text-fg-muted truncate max-w-[80px]">
                                 {task.assignee.name.split(' ')[0]}
                               </span>
                             </div>
                           ) : (
-                            <span className="text-[11px] text-slate-400 italic">Unassigned</span>
+                            <span className="text-[11px] text-fg-subtle italic">Unassigned</span>
                           )}
 
                           <div className="flex items-center space-x-2">
                             {/* Version Tag */}
-                            <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                            <span className="text-[10px] font-mono text-fg-muted bg-surface-2 px-1.5 py-0.5 rounded border border-line">
                               v{task.version}
                             </span>
 
                             {/* Comment Count */}
                             <button
                               onClick={() => setSelectedTaskForComments(task)}
-                              className="flex items-center space-x-1 text-slate-500 hover:text-slate-900 transition-colors"
+                              className="flex items-center space-x-1 text-fg-muted hover:text-fg transition-colors"
                             >
                               <MessageSquare className="h-3.5 w-3.5" />
                               <span className="text-[11px]">{task._count?.comments || 0}</span>
@@ -322,7 +322,7 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                               <select
                                 value={task.status}
                                 onChange={(e) => handleStatusChange(task, e.target.value)}
-                                className="bg-slate-50 text-slate-800 text-[11px] font-medium border border-slate-200 rounded px-1.5 py-0.5 focus:outline-none"
+                                className="bg-surface-2 text-fg text-[11px] font-medium border border-line rounded px-1.5 py-0.5 focus:outline-none"
                               >
                                 {COLUMNS.map((c) => (
                                   <option key={c.id} value={c.id}>
@@ -332,7 +332,7 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                               </select>
                             ) : (
                               <span title="Permission restricted">
-                                <Lock className="h-3.5 w-3.5 text-slate-400" />
+                                <Lock className="h-3.5 w-3.5 text-fg-subtle" />
                               </span>
                             )}
                           </div>
@@ -349,43 +349,43 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
 
       {/* 409 CONFLICT RESOLUTION MODAL */}
       {conflictState.isOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-xl bg-white p-6 rounded-2xl border border-amber-300 shadow-2xl space-y-5">
-            <div className="flex items-center space-x-3 border-b border-slate-100 pb-3">
-              <AlertTriangle className="h-6 w-6 text-amber-600 shrink-0" />
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-xl bg-surface p-6 rounded-2xl border border-warning/25 shadow-2xl space-y-5">
+            <div className="flex items-center space-x-3 border-b border-line pb-3">
+              <AlertTriangle className="h-6 w-6 text-warning shrink-0" />
               <div>
-                <h3 className="text-base font-bold text-slate-900">409 Conflict: Task Modified By Another User</h3>
-                <p className="text-xs text-slate-500">
+                <h3 className="text-base font-bold text-fg">409 Conflict: Task Modified By Another User</h3>
+                <p className="text-xs text-fg-muted">
                   Someone saved edits while you were reviewing. Review changes below to resolve.
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 text-xs">
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-                <p className="font-bold text-slate-600 uppercase tracking-wider">Your Pending Edit</p>
-                <p className="text-slate-700">
-                  Target Status: <span className="font-semibold text-amber-700">{conflictState.pendingStatus}</span>
+              <div className="p-4 rounded-xl bg-surface-2 border border-line space-y-2">
+                <p className="font-bold text-fg-muted uppercase tracking-wider">Your Pending Edit</p>
+                <p className="text-fg-muted">
+                  Target Status: <span className="font-semibold text-warning">{conflictState.pendingStatus}</span>
                 </p>
-                <p className="text-slate-400">Stale Version: v{conflictState.staleVersion}</p>
+                <p className="text-fg-subtle">Stale Version: v{conflictState.staleVersion}</p>
               </div>
 
-              <div className="p-4 rounded-xl bg-brand-50/60 border border-brand-200 space-y-2">
-                <p className="font-bold text-brand-700 uppercase tracking-wider">Latest Server Record</p>
-                <p className="text-slate-700">
-                  Current Title: <span className="font-semibold text-slate-900">{conflictState.latestTask?.title}</span>
+              <div className="p-4 rounded-xl bg-accent/60 border border-accent/25 space-y-2">
+                <p className="font-bold text-accent uppercase tracking-wider">Latest Server Record</p>
+                <p className="text-fg-muted">
+                  Current Title: <span className="font-semibold text-fg">{conflictState.latestTask?.title}</span>
                 </p>
-                <p className="text-slate-700">
-                  Current Status: <span className="font-semibold text-brand-700">{conflictState.latestTask?.status}</span>
+                <p className="text-fg-muted">
+                  Current Status: <span className="font-semibold text-accent">{conflictState.latestTask?.status}</span>
                 </p>
-                <p className="text-slate-500">Updated Version: v{conflictState.latestTask?.version}</p>
+                <p className="text-fg-muted">Updated Version: v{conflictState.latestTask?.version}</p>
               </div>
             </div>
 
             <div className="flex items-center justify-end space-x-3 pt-2">
               <button
                 onClick={handleResolveConflictUseLatest}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-medium text-slate-700 transition-colors"
+                className="px-4 py-2 rounded-xl bg-surface-2 hover:bg-line text-xs font-medium text-fg-muted transition-colors"
               >
                 Discard My Edit & Reload Latest
               </button>
@@ -402,24 +402,24 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
 
       {/* CREATE TASK MODAL */}
       {isCreateOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-white p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-lg font-bold text-slate-900">Create New Task</h3>
-              <button onClick={() => setIsCreateOpen(false)} className="p-1 text-slate-400 hover:text-slate-700">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-lg bg-surface p-6 rounded-2xl border border-line shadow-xl space-y-4">
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <h3 className="text-lg font-bold text-fg">Create New Task</h3>
+              <button onClick={() => setIsCreateOpen(false)} className="p-1 text-fg-subtle hover:text-fg-muted">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {createError && (
-              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+              <div className="p-3 rounded-xl bg-danger/10 border border-danger/25 text-danger text-xs">
                 {createError}
               </div>
             )}
 
             <form onSubmit={handleCreateTask} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-semibold text-fg-muted uppercase tracking-wider mb-1">
                   Task Title *
                 </label>
                 <input
@@ -428,12 +428,12 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                   placeholder="e.g. Implement JWT Refresh Strategy"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-brand-500"
+                  className="w-full bg-surface-2 border border-line rounded-xl px-3.5 py-2.5 text-sm text-fg focus:outline-none focus:bg-surface focus:border-accent/60"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-semibold text-fg-muted uppercase tracking-wider mb-1">
                   Description
                 </label>
                 <textarea
@@ -441,19 +441,19 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                   placeholder="Task details..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-brand-500 resize-none"
+                  className="w-full bg-surface-2 border border-line rounded-xl px-3.5 py-2.5 text-sm text-fg focus:outline-none focus:bg-surface focus:border-accent/60 resize-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-semibold text-fg-muted uppercase tracking-wider mb-1">
                     Priority
                   </label>
                   <select
                     value={priority}
                     onChange={(e) => setPriority(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none"
+                    className="w-full bg-surface-2 border border-line rounded-xl px-3 py-2 text-xs text-fg focus:outline-none"
                   >
                     <option value="LOW">Low</option>
                     <option value="MEDIUM">Medium</option>
@@ -463,13 +463,13 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-semibold text-fg-muted uppercase tracking-wider mb-1">
                     Initial Status
                   </label>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none"
+                    className="w-full bg-surface-2 border border-line rounded-xl px-3 py-2 text-xs text-fg focus:outline-none"
                   >
                     <option value="TODO">To Do</option>
                     <option value="IN_PROGRESS">In Progress</option>
@@ -480,13 +480,13 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-semibold text-fg-muted uppercase tracking-wider mb-1">
                   Assignee
                 </label>
                 <select
                   value={assigneeId}
                   onChange={(e) => setAssigneeId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-900 focus:outline-none"
+                  className="w-full bg-surface-2 border border-line rounded-xl px-3 py-2.5 text-xs text-fg focus:outline-none"
                 >
                   <option value="">Unassigned</option>
                   {members.map((m: any) => (
@@ -501,7 +501,7 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                 <button
                   type="button"
                   onClick={() => setIsCreateOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-xs text-slate-700 hover:bg-slate-200"
+                  className="px-4 py-2 rounded-xl bg-surface-2 text-xs text-fg-muted hover:bg-line"
                 >
                   Cancel
                 </button>
@@ -520,15 +520,15 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
 
       {/* COMMENTS DRAWER */}
       {selectedTaskForComments && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex justify-end">
-          <div className="w-full max-w-md bg-white border-l border-slate-200 h-full p-6 flex flex-col justify-between space-y-4 shadow-xl">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-end">
+          <div className="w-full max-w-md bg-surface border-l border-line h-full p-6 flex flex-col justify-between space-y-4 shadow-xl">
             <div>
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+              <div className="flex items-center justify-between border-b border-line pb-4 mb-4">
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 line-clamp-1">{selectedTaskForComments.title}</h3>
-                  <p className="text-xs text-slate-500">Comments & Collaboration</p>
+                  <h3 className="text-base font-bold text-fg line-clamp-1">{selectedTaskForComments.title}</h3>
+                  <p className="text-xs text-fg-muted">Comments & Collaboration</p>
                 </div>
-                <button onClick={() => setSelectedTaskForComments(null)} className="p-1 text-slate-400 hover:text-slate-700">
+                <button onClick={() => setSelectedTaskForComments(null)} className="p-1 text-fg-subtle hover:text-fg-muted">
                   <X className="h-5 w-5" />
                 </button>
               </div>
@@ -536,7 +536,7 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
               {/* Comments Stream */}
               <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
                 {selectedTaskForComments.comments?.length === 0 && (
-                  <p className="text-xs text-slate-400 text-center py-6">No comments yet. Mention team members with @name!</p>
+                  <p className="text-xs text-fg-subtle text-center py-6">No comments yet. Mention team members with @name!</p>
                 )}
                 {selectedTaskForComments.comments?.map((c: any) => {
                   const canDelete =
@@ -548,16 +548,16 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                     );
 
                   return (
-                    <div key={c.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1 text-xs">
+                    <div key={c.id} className="p-3 rounded-xl bg-surface-2 border border-line space-y-1 text-xs">
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-slate-900">{c.user?.name}</span>
+                        <span className="font-semibold text-fg">{c.user?.name}</span>
                         {canDelete && (
-                          <button onClick={() => handleDeleteComment(c.id)} className="text-slate-400 hover:text-rose-600">
+                          <button onClick={() => handleDeleteComment(c.id)} className="text-fg-subtle hover:text-danger">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         )}
                       </div>
-                      <p className="text-slate-700 whitespace-pre-wrap">{c.content}</p>
+                      <p className="text-fg-muted whitespace-pre-wrap">{c.content}</p>
                     </div>
                   );
                 })}
@@ -566,13 +566,13 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
 
             {/* Comment Post Form */}
             {!isArchived && (
-              <form onSubmit={handleAddComment} className="flex items-center space-x-2 pt-3 border-t border-slate-100">
+              <form onSubmit={handleAddComment} className="flex items-center space-x-2 pt-3 border-t border-line">
                 <input
                   type="text"
                   placeholder="Write a comment... (e.g. @Alex)"
                   value={commentContent}
                   onChange={(e) => setCommentContent(e.target.value)}
-                  className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-brand-500"
+                  className="flex-1 bg-surface-2 border border-line rounded-xl px-3.5 py-2.5 text-xs text-fg focus:outline-none focus:bg-surface focus:border-accent/60"
                 />
                 <button
                   type="submit"

@@ -1,42 +1,42 @@
 export const statusStyles: Record<string, { label: string; badge: string; dot: string }> = {
   TODO: {
     label: 'To Do',
-    badge: 'bg-slate-100 text-slate-700 border-slate-200',
-    dot: 'bg-slate-400',
+    badge: 'bg-surface-2 text-fg-muted border-line',
+    dot: 'bg-fg-subtle',
   },
   IN_PROGRESS: {
     label: 'In Progress',
-    badge: 'bg-blue-50 text-blue-700 border-blue-200',
-    dot: 'bg-blue-500',
+    badge: 'bg-info/10 text-info border-info/25',
+    dot: 'bg-info',
   },
   IN_REVIEW: {
     label: 'In Review',
-    badge: 'bg-amber-50 text-amber-700 border-amber-200',
-    dot: 'bg-amber-500',
+    badge: 'bg-warning/10 text-warning border-warning/25',
+    dot: 'bg-warning',
   },
   DONE: {
     label: 'Done',
-    badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    dot: 'bg-emerald-500',
+    badge: 'bg-success/10 text-success border-success/25',
+    dot: 'bg-success',
   },
 };
 
 export const priorityStyles: Record<string, { label: string; badge: string }> = {
   LOW: {
     label: 'Low',
-    badge: 'bg-slate-100 text-slate-600 border-slate-200',
+    badge: 'bg-surface-2 text-fg-muted border-line',
   },
   MEDIUM: {
     label: 'Medium',
-    badge: 'bg-blue-50 text-blue-700 border-blue-200',
+    badge: 'bg-info/10 text-info border-info/25',
   },
   HIGH: {
     label: 'High',
-    badge: 'bg-orange-50 text-orange-700 border-orange-200',
+    badge: 'bg-caution/10 text-caution border-caution/25',
   },
   URGENT: {
     label: 'Urgent',
-    badge: 'bg-rose-50 text-rose-700 border-rose-200 font-semibold',
+    badge: 'bg-danger/10 text-danger border-danger/25 font-semibold',
   },
 };
 
@@ -48,14 +48,14 @@ export function getInitials(name?: string): string {
 }
 
 export function getAvatarColor(id?: string): string {
-  if (!id) return 'bg-slate-100 text-slate-700 border-slate-200';
+  if (!id) return 'bg-surface-2 text-fg-muted border-line';
   const colors = [
-    'bg-indigo-100 text-indigo-700 border-indigo-200',
-    'bg-purple-100 text-purple-700 border-purple-200',
-    'bg-blue-100 text-blue-700 border-blue-200',
-    'bg-emerald-100 text-emerald-700 border-emerald-200',
-    'bg-amber-100 text-amber-700 border-amber-200',
-    'bg-rose-100 text-rose-700 border-rose-200',
+    'bg-plum/15 text-plum border-plum/25',
+    'bg-plum/15 text-plum border-plum/25',
+    'bg-info/15 text-info border-info/25',
+    'bg-success/15 text-success border-success/25',
+    'bg-warning/15 text-warning border-warning/25',
+    'bg-danger/15 text-danger border-danger/25',
   ];
   let hash = 0;
   for (let i = 0; i < id.length; i++) {

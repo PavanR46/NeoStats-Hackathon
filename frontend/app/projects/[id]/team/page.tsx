@@ -88,11 +88,11 @@ export default function ProjectTeamPage({ params }: { params: { id: string } }) 
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center space-x-2">
-            <Users className="h-5 w-5 text-purple-600" />
+          <h2 className="text-xl font-bold text-fg tracking-tight flex items-center space-x-2">
+            <Users className="h-5 w-5 text-plum" />
             <span>Project Team Roster</span>
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-fg-muted mt-0.5">
             Manage member access levels and project permissions.
           </p>
         </div>
@@ -111,25 +111,25 @@ export default function ProjectTeamPage({ params }: { params: { id: string } }) 
       {isLoading && (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white h-16 rounded-2xl animate-pulse border border-slate-200" />
+            <div key={i} className="bg-surface h-16 rounded-2xl animate-pulse border border-line" />
           ))}
         </div>
       )}
 
       {isError && (
-        <div className="bg-white p-6 rounded-2xl border border-rose-200 text-center space-y-3 max-w-md mx-auto shadow-sm">
-          <AlertTriangle className="h-8 w-8 text-rose-500 mx-auto" />
-          <p className="text-xs text-slate-700">Failed to load team members.</p>
-          <button onClick={() => refetch()} className="px-3 py-1.5 rounded-lg bg-slate-100 text-xs text-slate-800 hover:bg-slate-200">
+        <div className="bg-surface p-6 rounded-2xl border border-danger/25 text-center space-y-3 max-w-md mx-auto shadow-sm">
+          <AlertTriangle className="h-8 w-8 text-danger mx-auto" />
+          <p className="text-xs text-fg-muted">Failed to load team members.</p>
+          <button onClick={() => refetch()} className="px-3 py-1.5 rounded-lg bg-surface-2 text-xs text-fg hover:bg-line">
             <RefreshCw className="h-3.5 w-3.5" />
           </button>
         </div>
       )}
 
       {!isLoading && !isError && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm divide-y divide-slate-100">
+        <div className="bg-surface rounded-2xl border border-line shadow-sm divide-y divide-line">
           {members.map((m: any) => (
-            <div key={m.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+            <div key={m.id} className="p-4 flex items-center justify-between hover:bg-surface-2 transition-colors">
               <div className="flex items-center space-x-3">
                 <div
                   className={`h-9 w-9 rounded-full border flex items-center justify-center font-bold text-xs ${getAvatarColor(
@@ -139,8 +139,8 @@ export default function ProjectTeamPage({ params }: { params: { id: string } }) 
                   {getInitials(m.user.name)}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">{m.user.name}</p>
-                  <p className="text-xs text-slate-500">{m.user.email}</p>
+                  <p className="text-sm font-semibold text-fg">{m.user.name}</p>
+                  <p className="text-xs text-fg-muted">{m.user.email}</p>
                 </div>
               </div>
 
@@ -149,14 +149,14 @@ export default function ProjectTeamPage({ params }: { params: { id: string } }) 
                   <select
                     value={m.role}
                     onChange={(e) => handleRoleChange(m.id, e.target.value)}
-                    className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 font-medium focus:outline-none"
+                    className="bg-surface-2 border border-line rounded-lg px-2.5 py-1 text-xs text-fg font-medium focus:outline-none"
                   >
                     <option value="PROJECT_MANAGER">PROJECT_MANAGER</option>
                     <option value="TEAM_MEMBER">TEAM_MEMBER</option>
                     <option value="VIEWER">VIEWER</option>
                   </select>
                 ) : (
-                  <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                  <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-surface-2 text-fg-muted border border-line">
                     {m.role}
                   </span>
                 )}
@@ -164,7 +164,7 @@ export default function ProjectTeamPage({ params }: { params: { id: string } }) 
                 {canRemoveMember && m.userId !== user?.id && (
                   <button
                     onClick={() => handleRemoveMember(m.id)}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                    className="p-1.5 rounded-lg text-fg-subtle hover:text-danger hover:bg-danger/10 transition-colors"
                     title="Remove Member"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -178,35 +178,35 @@ export default function ProjectTeamPage({ params }: { params: { id: string } }) 
 
       {/* ADD MEMBER MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-lg font-bold text-slate-900">Add Member to Project</h3>
-              <button onClick={() => setIsModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-700">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-surface p-6 rounded-2xl border border-line shadow-xl space-y-4">
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <h3 className="text-lg font-bold text-fg">Add Member to Project</h3>
+              <button onClick={() => setIsModalOpen(false)} className="p-1 text-fg-subtle hover:text-fg-muted">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {formError && (
-              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+              <div className="p-3 rounded-xl bg-danger/10 border border-danger/25 text-danger text-xs">
                 {formError}
               </div>
             )}
 
             {availableUsers.length === 0 ? (
-              <p className="text-xs text-slate-500 text-center py-4">
+              <p className="text-xs text-fg-muted text-center py-4">
                 All active system users are already members of this project.
               </p>
             ) : (
               <form onSubmit={handleAddMember} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-semibold text-fg-muted uppercase tracking-wider mb-1">
                     Select User
                   </label>
                   <select
                     value={selectedUserId}
                     onChange={(e) => setSelectedUserId(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-900 focus:outline-none"
+                    className="w-full bg-surface-2 border border-line rounded-xl px-3 py-2.5 text-xs text-fg focus:outline-none"
                   >
                     {availableUsers.map((u: any) => (
                       <option key={u.id} value={u.id}>
@@ -217,13 +217,13 @@ export default function ProjectTeamPage({ params }: { params: { id: string } }) 
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-semibold text-fg-muted uppercase tracking-wider mb-1">
                     Project Role
                   </label>
                   <select
                     value={selectedRole}
                     onChange={(e) => setSelectedRole(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-900 focus:outline-none"
+                    className="w-full bg-surface-2 border border-line rounded-xl px-3 py-2.5 text-xs text-fg focus:outline-none"
                   >
                     <option value="TEAM_MEMBER">TEAM_MEMBER (Can edit assigned tasks & comment)</option>
                     <option value="PROJECT_MANAGER">PROJECT_MANAGER (Full project management)</option>
@@ -235,7 +235,7 @@ export default function ProjectTeamPage({ params }: { params: { id: string } }) 
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 rounded-xl bg-slate-100 text-xs text-slate-700 hover:bg-slate-200"
+                    className="px-4 py-2 rounded-xl bg-surface-2 text-xs text-fg-muted hover:bg-line"
                   >
                     Cancel
                   </button>

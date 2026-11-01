@@ -1,36 +1,35 @@
 'use client';
 
 import React from 'react';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { SocketProvider } from '@/components/SocketProvider';
 import { Navbar } from '@/components/Navbar';
-import { Sidebar } from '@/components/Sidebar';
+
+// These pages bring their own full-bleed layout, so they get no app navbar
+const BARE_ROUTES = ['/', '/login'];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
+  const pathname = usePathname();
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
-        <div className="h-10 w-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
-        <p className="mt-4 text-slate-500 text-sm font-medium">Loading NeoStats Session...</p>
+      <div className="flex min-h-screen flex-col items-center justify-center">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-accent border-t-transparent" />
+        <p className="mt-4 text-sm font-medium text-fg-muted">Loading your workspace...</p>
       </div>
     );
   }
 
-  if (!user) {
-    return <main className="min-h-screen bg-slate-50">{children}</main>;
+  if (!user || (pathname && BARE_ROUTES.includes(pathname))) {
+    return <main className="min-h-screen">{children}</main>;
   }
 
   return (
     <SocketProvider user={user}>
-      <div className="min-h-screen flex flex-col bg-slate-50">
-        <Navbar />
-        <div className="flex flex-1">
-          <Sidebar />
-          <main className="flex-1 p-6 overflow-y-auto">{children}</main>
-        </div>
-      </div>
+      <Navbar />
+      <main className="mx-auto max-w-7xl px-4 pb-16 pt-28 md:px-6">{children}</main>
     </SocketProvider>
   );
 }

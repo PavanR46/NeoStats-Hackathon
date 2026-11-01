@@ -33,10 +33,10 @@ export default function UsersAdminPage() {
 
   if (user?.globalRole !== 'ADMIN') {
     return (
-      <div className="bg-white p-8 rounded-2xl border border-rose-200 shadow-sm text-center space-y-3 max-w-md mx-auto mt-12">
-        <ShieldAlert className="h-10 w-10 text-rose-500 mx-auto" />
-        <h2 className="text-lg font-bold text-slate-900">Access Denied</h2>
-        <p className="text-xs text-slate-500">User Administration requires global system ADMIN privileges.</p>
+      <div className="bg-surface p-8 rounded-2xl border border-danger/25 shadow-sm text-center space-y-3 max-w-md mx-auto mt-12">
+        <ShieldAlert className="h-10 w-10 text-danger mx-auto" />
+        <h2 className="text-lg font-bold text-fg">Access Denied</h2>
+        <p className="text-xs text-fg-muted">User Administration requires global system ADMIN privileges.</p>
       </div>
     );
   }
@@ -76,11 +76,11 @@ export default function UsersAdminPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center space-x-2">
-            <Users className="h-6 w-6 text-purple-600" />
+          <h1 className="text-2xl font-bold text-fg tracking-tight flex items-center space-x-2">
+            <Users className="h-6 w-6 text-plum" />
             <span>User Administration</span>
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-fg-muted mt-1">
             Global system governance, user onboarding, and soft-deactivations.
           </p>
         </div>
@@ -95,9 +95,9 @@ export default function UsersAdminPage() {
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-surface p-4 rounded-2xl border border-line shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-fg-subtle" />
           <input
             type="text"
             placeholder="Search by name or email..."
@@ -106,18 +106,18 @@ export default function UsersAdminPage() {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-brand-500"
+            className="w-full bg-surface-2 border border-line rounded-xl pl-10 pr-4 py-2 text-sm text-fg placeholder-fg-subtle focus:outline-none focus:bg-surface focus:border-accent/60"
           />
         </div>
 
-        <div className="flex items-center space-x-2 bg-slate-100 p-1 rounded-xl border border-slate-200">
+        <div className="flex items-center space-x-2 bg-surface-2 p-1 rounded-xl border border-line">
           <button
             onClick={() => {
               setIsActive(undefined);
               setPage(1);
             }}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              isActive === undefined ? 'bg-white text-brand-700 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900'
+              isActive === undefined ? 'bg-surface text-accent shadow-sm font-semibold' : 'text-fg-muted hover:text-fg'
             }`}
           >
             All Users
@@ -128,7 +128,7 @@ export default function UsersAdminPage() {
               setPage(1);
             }}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              isActive === true ? 'bg-emerald-600 text-white shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900'
+              isActive === true ? 'bg-success text-white shadow-sm font-semibold' : 'text-fg-muted hover:text-fg'
             }`}
           >
             Active Only
@@ -139,7 +139,7 @@ export default function UsersAdminPage() {
               setPage(1);
             }}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              isActive === false ? 'bg-rose-600 text-white shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900'
+              isActive === false ? 'bg-danger text-white shadow-sm font-semibold' : 'text-fg-muted hover:text-fg'
             }`}
           >
             Deactivated
@@ -151,17 +151,17 @@ export default function UsersAdminPage() {
       {isLoading && (
         <div className="space-y-3">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-white h-16 rounded-2xl animate-pulse border border-slate-200" />
+            <div key={i} className="bg-surface h-16 rounded-2xl animate-pulse border border-line" />
           ))}
         </div>
       )}
 
       {/* Error State */}
       {isError && (
-        <div className="bg-white p-8 rounded-2xl border border-rose-200 text-center space-y-3 max-w-md mx-auto shadow-sm">
-          <AlertTriangle className="h-10 w-10 text-rose-500 mx-auto" />
-          <h3 className="text-base font-semibold text-slate-800">Unable to load users</h3>
-          <button onClick={() => refetch()} className="px-3 py-1.5 rounded-lg bg-slate-100 text-xs text-slate-800 hover:bg-slate-200">
+        <div className="bg-surface p-8 rounded-2xl border border-danger/25 text-center space-y-3 max-w-md mx-auto shadow-sm">
+          <AlertTriangle className="h-10 w-10 text-danger mx-auto" />
+          <h3 className="text-base font-semibold text-fg">Unable to load users</h3>
+          <button onClick={() => refetch()} className="px-3 py-1.5 rounded-lg bg-surface-2 text-xs text-fg hover:bg-line">
             <RefreshCw className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -169,29 +169,29 @@ export default function UsersAdminPage() {
 
       {/* Users Table List */}
       {!isLoading && !isError && data && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm divide-y divide-slate-100 overflow-hidden">
+        <div className="bg-surface rounded-2xl border border-line shadow-sm divide-y divide-line overflow-hidden">
           {data.data.map((u: any) => (
-            <div key={u.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+            <div key={u.id} className="p-4 flex items-center justify-between hover:bg-surface-2 transition-colors">
               <div className="flex items-center space-x-3">
                 <div className={`h-10 w-10 rounded-full border flex items-center justify-center font-bold text-xs ${getAvatarColor(u.id)}`}>
                   {getInitials(u.name)}
                 </div>
                 <div>
                   <div className="flex items-center space-x-2">
-                    <p className="text-sm font-semibold text-slate-900">{u.name}</p>
+                    <p className="text-sm font-semibold text-fg">{u.name}</p>
                     {!u.isActive && (
-                      <span className="px-2 py-0.5 text-[10px] font-semibold uppercase rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                      <span className="px-2 py-0.5 text-[10px] font-semibold uppercase rounded-full bg-danger/10 text-danger border border-danger/25">
                         Deactivated
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-500">{u.email}</p>
+                  <p className="text-xs text-fg-muted">{u.email}</p>
                 </div>
               </div>
 
               <div className="flex items-center space-x-4">
                 <span className={`px-2.5 py-1 text-xs font-semibold rounded-full border ${
-                  u.globalRole === 'ADMIN' ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-slate-100 text-slate-700 border-slate-200'
+                  u.globalRole === 'ADMIN' ? 'bg-plum/15 text-plum border-plum/25' : 'bg-surface-2 text-fg-muted border-line'
                 }`}>
                   {u.globalRole}
                 </span>
@@ -199,7 +199,7 @@ export default function UsersAdminPage() {
                 {u.isActive && u.id !== user?.id && (
                   <button
                     onClick={() => handleDeactivateUser(u.id)}
-                    className="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-medium transition-colors"
+                    className="px-3 py-1.5 rounded-lg bg-danger/10 hover:bg-danger/15 text-danger border border-danger/25 text-xs font-medium transition-colors"
                   >
                     Deactivate
                   </button>
@@ -212,24 +212,24 @@ export default function UsersAdminPage() {
 
       {/* CREATE USER MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-lg font-bold text-slate-900">Create User Account</h3>
-              <button onClick={() => setIsModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-700">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-surface p-6 rounded-2xl border border-line shadow-xl space-y-4">
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <h3 className="text-lg font-bold text-fg">Create User Account</h3>
+              <button onClick={() => setIsModalOpen(false)} className="p-1 text-fg-subtle hover:text-fg-muted">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {formError && (
-              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+              <div className="p-3 rounded-xl bg-danger/10 border border-danger/25 text-danger text-xs">
                 {formError}
               </div>
             )}
 
             <form onSubmit={handleCreateUser} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-semibold text-fg-muted uppercase tracking-wider mb-1">
                   Full Name *
                 </label>
                 <input
@@ -238,12 +238,12 @@ export default function UsersAdminPage() {
                   placeholder="e.g. Jane Smith"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-brand-500"
+                  className="w-full bg-surface-2 border border-line rounded-xl px-3.5 py-2 text-sm text-fg focus:outline-none focus:bg-surface focus:border-accent/60"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-semibold text-fg-muted uppercase tracking-wider mb-1">
                   Email Address *
                 </label>
                 <input
@@ -252,12 +252,12 @@ export default function UsersAdminPage() {
                   placeholder="jane@neostats.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-brand-500"
+                  className="w-full bg-surface-2 border border-line rounded-xl px-3.5 py-2 text-sm text-fg focus:outline-none focus:bg-surface focus:border-accent/60"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-semibold text-fg-muted uppercase tracking-wider mb-1">
                   Password *
                 </label>
                 <input
@@ -266,18 +266,18 @@ export default function UsersAdminPage() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-brand-500"
+                  className="w-full bg-surface-2 border border-line rounded-xl px-3.5 py-2 text-sm text-fg focus:outline-none focus:bg-surface focus:border-accent/60"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-semibold text-fg-muted uppercase tracking-wider mb-1">
                   Global Role
                 </label>
                 <select
                   value={globalRole}
                   onChange={(e) => setGlobalRole(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none"
+                  className="w-full bg-surface-2 border border-line rounded-xl px-3 py-2 text-xs text-fg focus:outline-none"
                 >
                   <option value="USER">USER (Regular User)</option>
                   <option value="ADMIN">ADMIN (Global Administrator)</option>
@@ -288,7 +288,7 @@ export default function UsersAdminPage() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-xs text-slate-700 hover:bg-slate-200"
+                  className="px-4 py-2 rounded-xl bg-surface-2 text-xs text-fg-muted hover:bg-line"
                 >
                   Cancel
                 </button>
