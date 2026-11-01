@@ -1,13 +1,33 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { Shield, KeyRound, Mail, AlertCircle, ArrowRight, Crown, Briefcase, Code, Eye } from 'lucide-react';
+import {
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  Briefcase,
+  Code,
+  Crown,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Mail,
+} from 'lucide-react';
+
+const PRESETS = [
+  { label: 'Admin', email: 'admin@neostats.com', icon: Crown, tone: 'text-plum' },
+  { label: 'Project Manager', email: 'pm@neostats.com', icon: Briefcase, tone: 'text-info' },
+  { label: 'Team Member', email: 'member@neostats.com', icon: Code, tone: 'text-success' },
+  { label: 'Viewer', email: 'viewer@neostats.com', icon: Eye, tone: 'text-fg-muted' },
+];
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -23,129 +43,126 @@ export default function LoginPage() {
       await login(email, password);
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Login failed. Please check credentials.');
+      setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const setPreset = (presetEmail: string) => {
+  const applyPreset = (presetEmail: string) => {
     setEmail(presetEmail);
     setPassword('password123');
     setError(null);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Ambient Glows */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="relative flex min-h-screen flex-col items-center justify-center p-4">
+      <Link href="/" className="absolute left-6 top-6 inline-flex items-center gap-2 text-sm text-fg-muted hover:text-fg">
+        <ArrowLeft className="h-4 w-4" />
+        Back to home
+      </Link>
 
-      <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl z-10 border border-slate-200">
-        <div className="flex flex-col items-center text-center mb-8">
-          <div className="h-14 w-14 rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-brand-500/20 mb-4">
-            <Shield className="h-7 w-7 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            Welcome to NeoStats
+      <div className="card w-full max-w-md p-8 shadow-xl">
+        <div className="mb-8 text-center">
+          <span className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-xl bg-fg text-lg font-bold text-canvas">
+            K
+          </span>
+          <h1 className="text-3xl font-semibold tracking-tight text-fg">
+            Welcome <em className="accent-serif">back</em>
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Real-Time Collaborative Project Management Platform
-          </p>
+          <p className="mt-2 text-sm text-fg-muted">Sign in to manage tickets, escalations and performance.</p>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 flex items-start space-x-3 text-rose-700 text-sm">
-            <AlertCircle className="h-5 w-5 text-rose-500 shrink-0 mt-0.5" />
+          <div
+            role="alert"
+            className="mb-6 flex items-start gap-3 rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-danger"
+          >
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
             <div>{error}</div>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
-              Email Address
+            <label htmlFor="email" className="mb-2 block text-xs font-medium text-fg-muted">
+              Email address
             </label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+              <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-subtle" />
               <input
+                id="email"
                 type="email"
                 required
+                autoFocus
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@neostats.com"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all"
+                placeholder="name@company.com"
+                className="input pl-11"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
+            <label htmlFor="password" className="mb-2 block text-xs font-medium text-fg-muted">
               Password
             </label>
             <div className="relative">
-              <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+              <KeyRound className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-subtle" />
               <input
-                type="password"
+                id="password"
+                type={showPassword ? 'text' : 'password'}
                 required
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all"
+                placeholder="Your password"
+                className="input pl-11 pr-11"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((s) => !s)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-fg"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white font-medium shadow-md shadow-brand-500/20 flex items-center justify-center space-x-2 transition-all disabled:opacity-50"
-          >
+          <button type="submit" disabled={isSubmitting} className="btn-primary w-full py-3">
             {isSubmitting ? (
-              <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <>
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-canvas border-t-transparent" />
+                Signing in...
+              </>
             ) : (
               <>
-                <span>Sign In</span>
+                Sign in
                 <ArrowRight className="h-4 w-4" />
               </>
             )}
           </button>
         </form>
 
-        {/* Quick Role Demo Accounts */}
-        <div className="mt-8 pt-6 border-t border-slate-200">
-          <p className="text-xs font-semibold text-slate-500 text-center mb-3">
-            HACKATHON QUICK-LOGIN ROLE PRESETS:
-          </p>
+        <div className="mt-8 border-t border-line pt-6">
+          <p className="mb-3 text-center text-xs text-fg-subtle">Demo accounts: click one to fill the form</p>
           <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => setPreset('admin@neostats.com')}
-              className="px-3 py-2 rounded-lg bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 text-xs font-medium text-left transition-colors flex items-center space-x-2"
-            >
-              <Crown className="h-3.5 w-3.5 text-purple-600 shrink-0" />
-              <span>Admin User</span>
-            </button>
-            <button
-              onClick={() => setPreset('pm@neostats.com')}
-              className="px-3 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-medium text-left transition-colors flex items-center space-x-2"
-            >
-              <Briefcase className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-              <span>Project Manager</span>
-            </button>
-            <button
-              onClick={() => setPreset('member@neostats.com')}
-              className="px-3 py-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-xs font-medium text-left transition-colors flex items-center space-x-2"
-            >
-              <Code className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-              <span>Team Member</span>
-            </button>
-            <button
-              onClick={() => setPreset('viewer@neostats.com')}
-              className="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-medium text-left transition-colors flex items-center space-x-2"
-            >
-              <Eye className="h-3.5 w-3.5 text-slate-500 shrink-0" />
-              <span>Viewer User</span>
-            </button>
+            {PRESETS.map((p) => {
+              const Icon = p.icon;
+              return (
+                <button
+                  key={p.email}
+                  type="button"
+                  onClick={() => applyPreset(p.email)}
+                  className="flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2 text-left text-xs font-medium text-fg transition-colors hover:border-accent/40"
+                >
+                  <Icon className={`h-3.5 w-3.5 shrink-0 ${p.tone}`} />
+                  {p.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
