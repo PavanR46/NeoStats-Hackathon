@@ -2,48 +2,181 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ------------------------------------------------------------------
+   Design tokens. Stored as "R G B" triplets so Tailwind can apply
+   opacity (bg-surface/70). Dark is the default theme; light is the
+   fallback when <html> has no "dark" class.
+------------------------------------------------------------------- */
+:root {
+  --canvas: 246 247 251;
+  --surface: 255 255 255;
+  --surface-2: 241 243 248;
+  --line: 226 232 240;
+  --line-strong: 203 213 225;
+  --fg: 11 13 20;
+  --fg-muted: 75 82 98;
+  --fg-subtle: 138 144 160;
+  --accent: 37 99 235;
+  --success: 4 120 87;
+  --warning: 180 83 9;
+  --caution: 194 65 12;
+  --danger: 190 18 60;
+  --info: 29 78 216;
+  --plum: 109 40 217;
+  --glow: 0.07;
+}
+
+.dark {
+  --canvas: 5 6 9;
+  --surface: 12 13 18;
+  --surface-2: 20 22 30;
+  --line: 38 40 52;
+  --line-strong: 63 66 82;
+  --fg: 245 246 248;
+  --fg-muted: 161 165 179;
+  --fg-subtle: 107 112 128;
+  --accent: 96 165 250;
+  --success: 52 211 153;
+  --warning: 251 191 36;
+  --caution: 251 146 60;
+  --danger: 251 113 133;
+  --info: 96 165 250;
+  --plum: 167 139 250;
+  --glow: 0.28;
+}
+
 @layer base {
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
   body {
-    @apply bg-slate-50 text-slate-900 antialiased min-h-screen selection:bg-brand-500 selection:text-white;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    @apply bg-canvas text-fg antialiased min-h-screen selection:bg-accent/30;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+  /* Soft blue glow on both screen edges (the look of the reference site) */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(38% 60% at 0% 50%, rgb(var(--accent) / var(--glow)), transparent 72%),
+      radial-gradient(38% 60% at 100% 50%, rgb(var(--accent) / var(--glow)), transparent 72%);
+  }
+  :focus-visible {
+    outline: 2px solid rgb(var(--accent) / 0.6);
+    outline-offset: 2px;
   }
 }
 
-/* Custom Scrollbar */
+/* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(241, 245, 249, 0.8);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(203, 213, 225, 0.8);
+  background: rgb(var(--line-strong));
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 1);
+  background: rgb(var(--fg-subtle));
 }
 
-/* Glassmorphism Styles for Light Mode */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+@layer components {
+  /* Kept for existing pages that use these class names */
+  .glass-panel {
+    background: rgb(var(--surface) / 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgb(var(--line));
+  }
+  .glass-card {
+    background: rgb(var(--surface));
+    border: 1px solid rgb(var(--line));
+    transition: all 0.2s ease-in-out;
+  }
+  .glass-card:hover {
+    border-color: rgb(var(--accent) / 0.45);
+    box-shadow: 0 8px 24px -10px rgb(var(--accent) / 0.35);
+    transform: translateY(-1px);
+  }
+
+  /* Building blocks for new UI */
+  .card {
+    @apply bg-surface border border-line rounded-2xl;
+  }
+  .card-hover {
+    @apply bg-surface border border-line rounded-2xl transition-all duration-200 hover:border-accent/40 hover:-translate-y-0.5;
+  }
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/60 px-3 py-1 text-xs font-medium text-fg-muted;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-fg px-4 py-2 text-sm font-medium text-canvas transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-line px-4 py-2 text-sm font-medium text-fg transition-all hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-danger/30 bg-danger/10 px-4 py-2 text-sm font-medium text-danger transition-all hover:bg-danger/20 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .input {
+    @apply w-full rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-sm text-fg placeholder:text-fg-subtle transition-all focus:border-accent/60 focus:outline-none focus:ring-2 focus:ring-accent/20;
+  }
+
+  /* Serif italic accent used inside headings, e.g. Performance <em class="accent-serif">Matrix</em> */
+  .accent-serif {
+    font-family: var(--font-serif), Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+
+  /* Dotted-grid hover texture and glowing underline from the reference cards */
+  .dot-grid {
+    background-image: radial-gradient(rgb(var(--fg) / 0.16) 1px, transparent 1px);
+    background-size: 14px 14px;
+  }
+  .glow-line {
+    position: relative;
+  }
+  .glow-line::after {
+    content: '';
+    position: absolute;
+    left: 15%;
+    right: 15%;
+    bottom: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgb(var(--accent)), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .glow-line:hover::after {
+    opacity: 1;
+  }
+
+  .toast-in {
+    animation: toast-in 0.2s ease-out;
+  }
 }
 
-.glass-card {
-  background: #ffffff;
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
-  transition: all 0.2s ease-in-out;
-}
-
-.glass-card:hover {
-  border-color: rgba(99, 102, 241, 0.4);
-  box-shadow: 0 4px 12px -2px rgba(99, 102, 241, 0.08);
-  transform: translateY(-1px);
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
