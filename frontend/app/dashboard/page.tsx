@@ -31,10 +31,10 @@ export default function DashboardPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-2xl font-bold text-fg tracking-tight">
             Welcome back, {user?.name}
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-fg-muted mt-1">
             Here is what is happening across your collaborative workspaces today.
           </p>
         </div>
@@ -52,57 +52,57 @@ export default function DashboardPage() {
 
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
-          <div className="h-12 w-12 rounded-xl bg-brand-50 border border-brand-100 flex items-center justify-center text-brand-600 shrink-0">
+        <div className="bg-surface p-5 rounded-2xl border border-line/80 shadow-sm flex items-center space-x-4">
+          <div className="h-12 w-12 rounded-xl bg-accent/10 border border-accent/25 flex items-center justify-center text-accent shrink-0">
             <FolderKanban className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <p className="text-xs font-semibold text-fg-subtle uppercase tracking-wider">
               Active Projects
             </p>
-            <p className="text-2xl font-bold text-slate-900 mt-0.5">
+            <p className="text-2xl font-bold text-fg mt-0.5">
               {isLoadingProjects ? '...' : projectsData?.pagination.total || 0}
             </p>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
-          <div className="h-12 w-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+        <div className="bg-surface p-5 rounded-2xl border border-line/80 shadow-sm flex items-center space-x-4">
+          <div className="h-12 w-12 rounded-xl bg-success/10 border border-success/25 flex items-center justify-center text-success shrink-0">
             <CheckCircle2 className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <p className="text-xs font-semibold text-fg-subtle uppercase tracking-wider">
               Role Permission
             </p>
-            <p className="text-sm font-bold text-emerald-700 mt-0.5 uppercase">
+            <p className="text-sm font-bold text-success mt-0.5 uppercase">
               {user?.globalRole}
             </p>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
-          <div className="h-12 w-12 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
+        <div className="bg-surface p-5 rounded-2xl border border-line/80 shadow-sm flex items-center space-x-4">
+          <div className="h-12 w-12 rounded-xl bg-plum/10 border border-plum/25 flex items-center justify-center text-plum shrink-0">
             <Clock className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <p className="text-xs font-semibold text-fg-subtle uppercase tracking-wider">
               Recent Activity
             </p>
-            <p className="text-2xl font-bold text-slate-900 mt-0.5">
+            <p className="text-2xl font-bold text-fg mt-0.5">
               {isLoadingActivity ? '...' : activityData?.pagination.total || 0}
             </p>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
-          <div className="h-12 w-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+        <div className="bg-surface p-5 rounded-2xl border border-line/80 shadow-sm flex items-center space-x-4">
+          <div className="h-12 w-12 rounded-xl bg-info/10 border border-info/25 flex items-center justify-center text-info shrink-0">
             <Activity className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <p className="text-xs font-semibold text-fg-subtle uppercase tracking-wider">
               Engine Status
             </p>
-            <p className="text-sm font-semibold text-blue-700 mt-0.5">
+            <p className="text-sm font-semibold text-info mt-0.5">
               Socket.IO Connected
             </p>
           </div>
@@ -114,13 +114,13 @@ export default function DashboardPage() {
         {/* Projects Section (2 Cols) */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-900 flex items-center space-x-2">
-              <FolderKanban className="h-5 w-5 text-brand-600" />
+            <h2 className="text-lg font-bold text-fg flex items-center space-x-2">
+              <FolderKanban className="h-5 w-5 text-accent" />
               <span>Your Workspaces</span>
             </h2>
             <Link
               href="/projects"
-              className="text-xs font-medium text-brand-600 hover:text-brand-700 flex items-center space-x-1 transition-colors"
+              className="text-xs font-medium text-accent hover:text-accent flex items-center space-x-1 transition-colors"
             >
               <span>View All</span>
               <ArrowRight className="h-3.5 w-3.5" />
@@ -131,19 +131,19 @@ export default function DashboardPage() {
           {isLoadingProjects && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 animate-pulse h-36" />
+                <div key={i} className="bg-surface p-5 rounded-2xl border border-line animate-pulse h-36" />
               ))}
             </div>
           )}
 
           {/* Error State */}
           {isErrorProjects && (
-            <div className="bg-white p-6 rounded-2xl border border-rose-200 text-center space-y-3 shadow-sm">
-              <AlertTriangle className="h-8 w-8 text-rose-500 mx-auto" />
-              <p className="text-sm text-slate-700">Failed to load workspace projects.</p>
+            <div className="bg-surface p-6 rounded-2xl border border-danger/25 text-center space-y-3 shadow-sm">
+              <AlertTriangle className="h-8 w-8 text-danger mx-auto" />
+              <p className="text-sm text-fg-muted">Failed to load workspace projects.</p>
               <button
                 onClick={() => refetchProjects()}
-                className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-medium text-slate-800 transition-colors"
+                className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-surface-2 hover:bg-line text-xs font-medium text-fg transition-colors"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 <span>Retry</span>
@@ -153,11 +153,11 @@ export default function DashboardPage() {
 
           {/* Empty State */}
           {!isLoadingProjects && !isErrorProjects && projectsData?.data.length === 0 && (
-            <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center space-y-4">
-              <FolderKanban className="h-10 w-10 text-slate-400 mx-auto" />
+            <div className="bg-surface p-8 rounded-2xl border border-line shadow-sm text-center space-y-4">
+              <FolderKanban className="h-10 w-10 text-fg-subtle mx-auto" />
               <div>
-                <h3 className="text-base font-semibold text-slate-800">No Projects Found</h3>
-                <p className="text-xs text-slate-500 mt-1">You are not a member of any active projects yet.</p>
+                <h3 className="text-base font-semibold text-fg">No Projects Found</h3>
+                <p className="text-xs text-fg-muted mt-1">You are not a member of any active projects yet.</p>
               </div>
               {canCreateProject && (
                 <Link
@@ -178,23 +178,23 @@ export default function DashboardPage() {
                 <Link
                   key={project.id}
                   href={`/projects/${project.id}`}
-                  className="bg-white p-5 rounded-2xl block border border-slate-200 shadow-sm hover:border-brand-300 hover:shadow-md transition-all group"
+                  className="bg-surface p-5 rounded-2xl block border border-line shadow-sm hover:border-accent/40 hover:shadow-md transition-all group"
                 >
                   <div className="flex items-start justify-between">
-                    <h3 className="text-base font-semibold text-slate-900 group-hover:text-brand-600 transition-colors line-clamp-1">
+                    <h3 className="text-base font-semibold text-fg group-hover:text-accent transition-colors line-clamp-1">
                       {project.name}
                     </h3>
-                    <span className="px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                    <span className="px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full bg-surface-2 text-fg-muted border border-line">
                       {project.currentUserRole}
                     </span>
                   </div>
 
-                  <p className="text-xs text-slate-500 mt-2 line-clamp-2 min-h-[2.5rem]">
+                  <p className="text-xs text-fg-muted mt-2 line-clamp-2 min-h-[2.5rem]">
                     {project.description || 'No description provided.'}
                   </p>
 
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
-                    <div className="flex items-center space-x-3 text-slate-500">
+                  <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-xs text-fg-subtle">
+                    <div className="flex items-center space-x-3 text-fg-muted">
                       <span className="flex items-center space-x-1">
                         <Users className="h-3.5 w-3.5" />
                         <span>{project.memberCount} members</span>
@@ -202,7 +202,7 @@ export default function DashboardPage() {
                       <span>•</span>
                       <span>{project.taskCount} tasks</span>
                     </div>
-                    <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-brand-600 group-hover:translate-x-1 transition-all" />
+                    <ArrowRight className="h-4 w-4 text-fg-subtle group-hover:text-accent group-hover:translate-x-1 transition-all" />
                   </div>
                 </Link>
               ))}
@@ -213,29 +213,29 @@ export default function DashboardPage() {
         {/* Activity Stream Sidebar (1 Col) */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-900 flex items-center space-x-2">
-              <Activity className="h-5 w-5 text-purple-600" />
+            <h2 className="text-lg font-bold text-fg flex items-center space-x-2">
+              <Activity className="h-5 w-5 text-plum" />
               <span>Live Audit Activity</span>
             </h2>
           </div>
 
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <div className="bg-surface p-4 rounded-2xl border border-line shadow-sm space-y-4">
             {isLoadingActivity && (
               <div className="space-y-3">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-12 bg-slate-100 rounded-xl animate-pulse" />
+                  <div key={i} className="h-12 bg-surface-2 rounded-xl animate-pulse" />
                 ))}
               </div>
             )}
 
             {isErrorActivity && (
-              <div className="text-center py-4 text-xs text-rose-500">
+              <div className="text-center py-4 text-xs text-danger">
                 Failed to load activity stream.
               </div>
             )}
 
             {!isLoadingActivity && !isErrorActivity && activityData?.data.length === 0 && (
-              <div className="text-center py-6 text-xs text-slate-400">
+              <div className="text-center py-6 text-xs text-fg-subtle">
                 No recent activity recorded yet.
               </div>
             )}
@@ -261,7 +261,7 @@ export default function DashboardPage() {
                   })();
 
                   return (
-                    <div key={act.id} className="flex items-start space-x-3 text-xs p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                    <div key={act.id} className="flex items-start space-x-3 text-xs p-2.5 rounded-xl bg-surface-2 border border-line/80">
                       <div
                         className={`h-7 w-7 rounded-full border flex items-center justify-center font-bold shrink-0 mt-0.5 ${getAvatarColor(
                           act.userId
@@ -270,12 +270,12 @@ export default function DashboardPage() {
                         {getInitials(act.user?.name)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-slate-700">
-                          <span className="font-semibold text-slate-900">{act.user?.name || 'System'}</span>{' '}
-                          <span className="text-slate-600 font-medium">{actionText}</span>
+                        <p className="text-fg-muted">
+                          <span className="font-semibold text-fg">{act.user?.name || 'System'}</span>{' '}
+                          <span className="text-fg-muted font-medium">{actionText}</span>
                         </p>
                         {act.project && (
-                          <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                          <p className="text-[11px] text-fg-subtle truncate mt-0.5">
                             in {act.project.name}
                           </p>
                         )}
