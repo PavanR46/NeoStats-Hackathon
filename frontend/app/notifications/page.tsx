@@ -89,7 +89,7 @@ export default function NotificationsPage() {
             <div
               key={n.id}
               className={`p-4 flex items-start justify-between gap-4 transition-colors ${
-                !n.isRead ? 'bg-accent/60' : 'hover:bg-surface-2'
+                !n.isRead ? 'bg-accent/10' : 'hover:bg-surface-2'
               }`}
             >
               <div className="space-y-1">

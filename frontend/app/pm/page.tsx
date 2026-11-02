@@ -298,7 +298,7 @@ export default function PMConsolePage() {
                       setSelectedProjectId(p.id);
                       setSelectedProjectName(p.name);
                     }}
-                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-plum/10 hover:bg-plum/15 text-plum text-xs font-semibold border border-plum/80 transition-colors"
+                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-plum/10 hover:bg-plum/15 text-plum text-xs font-semibold border border-plum/25 transition-colors"
                   >
                     <Users className="h-3.5 w-3.5" />
                     <span>Roster ({p._count?.members || 0})</span>
@@ -306,7 +306,7 @@ export default function PMConsolePage() {
 
                   <Link
                     href={`/projects/${p.id}`}
-                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-accent/10 hover:bg-accent/15 text-accent text-xs font-semibold border border-accent/80 transition-colors"
+                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-accent/10 hover:bg-accent/15 text-accent text-xs font-semibold border border-accent/25 transition-colors"
                   >
                     <span>Board</span>
                     <ArrowRight className="h-3.5 w-3.5" />

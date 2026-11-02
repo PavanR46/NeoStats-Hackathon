@@ -370,7 +370,7 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                 <p className="text-fg-subtle">Stale Version: v{conflictState.staleVersion}</p>
               </div>
 
-              <div className="p-4 rounded-xl bg-accent/60 border border-accent/25 space-y-2">
+              <div className="p-4 rounded-xl bg-accent/10 border border-accent/25 space-y-2">
                 <p className="font-bold text-accent uppercase tracking-wider">Latest Server Record</p>
                 <p className="text-fg-muted">
                   Current Title: <span className="font-semibold text-fg">{conflictState.latestTask?.title}</span>
