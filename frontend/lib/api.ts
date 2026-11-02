@@ -1,3 +1,4 @@
+import type { PerformanceMatrix } from '@/lib/performance';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
 export class ApiError extends Error {
@@ -237,4 +238,26 @@ export const notificationApi = {
     fetchApi<{ message: string }>('/notifications/read-all', {
       method: 'PATCH',
     }),
+};
+// Escalations API
+export const escalationApi = {
+  list: (query: { page?: number; limit?: number; type?: string; projectId?: string } = {}) => {
+    const params = new URLSearchParams();
+    if (query.page) params.append('page', query.page.toString());
+    if (query.limit) params.append('limit', query.limit.toString());
+    if (query.type) params.append('type', query.type);
+    if (query.projectId) params.append('projectId', query.projectId);
+    return fetchApi<{ data: any[]; pagination: any }>(`/escalations?${params.toString()}`);
+  },
+};
+
+// Performance API
+export const performanceApi = {
+  matrix: (query: { from?: string; to?: string; projectId?: string } = {}) => {
+    const params = new URLSearchParams();
+    if (query.from) params.append('from', query.from);
+    if (query.to) params.append('to', query.to);
+    if (query.projectId) params.append('projectId', query.projectId);
+    return fetchApi<PerformanceMatrix>(`/performance/matrix?${params.toString()}`);
+  },
 };

@@ -30,4 +30,12 @@ export const queryKeys = {
     all: ['notifications'] as const,
     list: (filters: Record<string, any> = {}) => ['notifications', filters] as const,
   },
+    escalations: {
+    all: ['escalations'] as const,
+    list: (filters: Record<string, any> = {}) => ['escalations', filters] as const,
+    forTask: (taskId: string) => ['task-escalations', taskId] as const,
+  },
+  performance: {
+    matrix: (filters: Record<string, any> = {}) => ['performance', filters] as const,
+  },
 };
