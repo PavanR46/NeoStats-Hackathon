@@ -16,6 +16,7 @@ export type Action =
   | 'task:delete'
   | 'task:assign'
   | 'task:change_status'
+  | 'task:escalate'
   | 'comment:create'
   | 'comment:read'
   | 'comment:delete'
@@ -64,8 +65,7 @@ export function can(
       }
 
       // Team members can update tasks assigned to them
-      if (action === 'task:update' || action === 'task:change_status') {
-        if (resourceContext?.assigneeId && userCtx.userId) {
+        if (action === 'task:update' || action === 'task:change_status' || action === 'task:escalate') {        if (resourceContext?.assigneeId && userCtx.userId) {
           return resourceContext.assigneeId === userCtx.userId;
         }
         return true; // default visible, server enforces exact check
