@@ -26,8 +26,13 @@ const COLUMNS = [
   { id: 'TODO', title: 'To Do', style: statusStyles.TODO },
   { id: 'IN_PROGRESS', title: 'In Progress', style: statusStyles.IN_PROGRESS },
   { id: 'IN_REVIEW', title: 'In Review', style: statusStyles.IN_REVIEW },
+  { id: 'ESCALATED', title: 'Escalated', style: statusStyles.ESCALATED },
   { id: 'DONE', title: 'Done', style: statusStyles.DONE },
+  { id: 'CLOSED', title: 'Closed', style: statusStyles.CLOSED },
 ];
+
+// ESCALATED is reached only through the Escalate action (it needs a reason and a history row)
+const MOVABLE_COLUMNS = COLUMNS.filter((c) => c.id !== 'ESCALATED');
 
 export default function TasksKanbanPage({ params }: { params: { id: string } }) {
   const projectId = params.id;
@@ -42,6 +47,7 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
   const isArchived = projectData?.project?.isArchived;
 
   const canCreateTask = !isArchived && can({ globalRole: user?.globalRole, projectRole: currentUserRole }, 'task:create');
+  const isLead = user?.globalRole === 'ADMIN' || currentUserRole === 'PROJECT_MANAGER';
 
   // Create Task Modal State
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -224,8 +230,7 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
 
       {/* Kanban Board Columns */}
       {!isLoading && !isError && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 overflow-x-auto pb-4">
-          {COLUMNS.map((col) => {
+      <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4 pb-4">          {COLUMNS.map((col) => {
             const columnTasks = tasks.filter((t: any) => t.status === col.id);
 
             return (
@@ -324,7 +329,9 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                                 onChange={(e) => handleStatusChange(task, e.target.value)}
                                 className="bg-surface-2 text-fg text-[11px] font-medium border border-line rounded px-1.5 py-0.5 focus:outline-none"
                               >
-                                {COLUMNS.map((c) => (
+                                {(task.status === 'ESCALATED' ? COLUMNS : MOVABLE_COLUMNS)
+                                  .filter((c) => c.id !== 'CLOSED' || isLead || task.status === 'CLOSED')
+                                  .map((c) => (
                                   <option key={c.id} value={c.id}>
                                     Move to {c.title}
                                   </option>
