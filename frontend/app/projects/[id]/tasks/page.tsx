@@ -20,14 +20,22 @@ import {
   Send,
   Trash2,
   Lock,
+  ArrowUpCircle,
 } from 'lucide-react';
+import { SlaBadge } from '@/components/SlaBadge';
+import { EscalateModal } from '@/components/EscalateModal';
+import { ESCALATION_LEVELS } from '@/lib/sla';
 
 const COLUMNS = [
   { id: 'TODO', title: 'To Do', style: statusStyles.TODO },
   { id: 'IN_PROGRESS', title: 'In Progress', style: statusStyles.IN_PROGRESS },
   { id: 'IN_REVIEW', title: 'In Review', style: statusStyles.IN_REVIEW },
+  { id: 'ESCALATED', title: 'Escalated', style: statusStyles.ESCALATED },
   { id: 'DONE', title: 'Done', style: statusStyles.DONE },
+  { id: 'CLOSED', title: 'Closed', style: statusStyles.CLOSED },
 ];
+
+const MOVABLE_COLUMNS = COLUMNS.filter((c) => c.id !== 'ESCALATED');
 
 export default function TasksKanbanPage({ params }: { params: { id: string } }) {
   const projectId = params.id;
@@ -40,10 +48,11 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
 
   const currentUserRole = projectData?.project?.currentUserRole;
   const isArchived = projectData?.project?.isArchived;
+  const isLead = user?.globalRole === 'ADMIN' || currentUserRole === 'PROJECT_MANAGER';
 
   const canCreateTask = !isArchived && can({ globalRole: user?.globalRole, projectRole: currentUserRole }, 'task:create');
 
-  // Create Task Modal State
+  // Create Ticket Modal State
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -52,6 +61,8 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
   const [assigneeId, setAssigneeId] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [category, setCategory] = useState('');
+  const [requesterId, setRequesterId] = useState<string>('');
 
   // 409 Conflict Modal State
   const [conflictState, setConflictState] = useState<{
@@ -72,6 +83,10 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
   const [selectedTaskForComments, setSelectedTaskForComments] = useState<any | null>(null);
   const [commentContent, setCommentContent] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [isInternalNote, setIsInternalNote] = useState(false);
+  
+  // Escalate dialog
+  const [escalateTask, setEscalateTask] = useState<any | null>(null);
 
   const tasks = tasksData?.data || [];
   const members = membersData?.members || [];
@@ -88,13 +103,17 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
         priority,
         status,
         assigneeId: assigneeId || null,
+        requesterId: requesterId || undefined,
+        category: category.trim() || undefined,
       });
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks.list(projectId) });
       setIsCreateOpen(false);
       setTitle('');
       setDescription('');
+      setCategory('');
+      setRequesterId('');
     } catch (err: any) {
-      setCreateError(err.message || 'Failed to create task');
+      setCreateError(err.message || 'Failed to create ticket');
     } finally {
       setIsCreating(false);
     }
@@ -111,7 +130,6 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks.list(projectId) });
     } catch (err: any) {
       if (err instanceof ApiError && err.status === 409 && err.latestTask) {
-        // Trigger 409 Conflict Modal
         setConflictState({
           isOpen: true,
           taskId: task.id,
@@ -120,7 +138,7 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
           latestTask: err.latestTask,
         });
       } else {
-        alert(err.message || 'Failed to update task status');
+        alert(err.message || 'Failed to update ticket status');
       }
     }
   };
@@ -139,7 +157,7 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks.list(projectId) });
       setConflictState((prev) => ({ ...prev, isOpen: false }));
     } catch (err: any) {
-      alert(err.message || 'Re-applying failed. Reloading latest task state.');
+      alert(err.message || 'Re-applying failed. Reloading latest ticket state.');
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks.list(projectId) });
       setConflictState((prev) => ({ ...prev, isOpen: false }));
     }
@@ -151,10 +169,10 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
     setIsSubmittingComment(true);
 
     try {
-      await commentApi.create(selectedTaskForComments.id, commentContent);
+      await commentApi.create(selectedTaskForComments.id, commentContent, isInternalNote);
       setCommentContent('');
+      setIsInternalNote(false);
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks.list(projectId) });
-      // Fetch latest task comments
       const updated = await taskApi.getById(selectedTaskForComments.id);
       setSelectedTaskForComments(updated.task);
     } catch (err: any) {
@@ -181,9 +199,9 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
       {/* Action Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-fg tracking-tight">Interactive Kanban Board</h2>
+          <h2 className="text-xl font-bold text-fg tracking-tight">Ticket Board</h2>
           <p className="text-xs text-fg-muted mt-0.5">
-            Real-time status updates with Optimistic Concurrency Locking.
+            Live SLA countdowns, escalation levels and conflict-safe status changes.
           </p>
         </div>
 
@@ -193,15 +211,15 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
             className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition-all"
           >
             <Plus className="h-4 w-4" />
-            <span>New Task</span>
+            <span>New Ticket</span>
           </button>
         )}
       </div>
 
       {/* Loading Skeletons */}
       {isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="bg-surface p-4 rounded-2xl border border-line animate-pulse h-96" />
           ))}
         </div>
@@ -211,7 +229,7 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
       {isError && (
         <div className="bg-surface p-8 rounded-2xl border border-danger/25 text-center space-y-3 max-w-md mx-auto shadow-sm">
           <AlertTriangle className="h-10 w-10 text-danger mx-auto" />
-          <h3 className="text-base font-semibold text-fg">Failed to load tasks</h3>
+          <h3 className="text-base font-semibold text-fg">Failed to load tickets</h3>
           <button
             onClick={() => refetch()}
             className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-surface-2 text-xs font-medium text-fg hover:bg-line"
@@ -224,7 +242,7 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
 
       {/* Kanban Board Columns */}
       {!isLoading && !isError && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 overflow-x-auto pb-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4 pb-4 overflow-x-auto">
           {COLUMNS.map((col) => {
             const columnTasks = tasks.filter((t: any) => t.status === col.id);
 
@@ -245,7 +263,7 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                 <div className="flex-1 space-y-3">
                   {columnTasks.length === 0 && (
                     <div className="text-center py-8 text-xs text-fg-subtle border border-dashed border-line rounded-xl">
-                      No tasks in {col.title}
+                      No tickets
                     </div>
                   )}
 
@@ -255,6 +273,17 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                       can(
                         { globalRole: user?.globalRole, projectRole: currentUserRole, userId: user?.id },
                         'task:update',
+                        { assigneeId: task.assigneeId }
+                      );
+
+                    const canEscalate =
+                      !isArchived &&
+                      task.status !== 'DONE' &&
+                      task.status !== 'CLOSED' &&
+                      (task.escalationLevel ?? 1) < 3 &&
+                      can(
+                        { globalRole: user?.globalRole, projectRole: currentUserRole, userId: user?.id },
+                        'task:escalate',
                         { assigneeId: task.assigneeId }
                       );
 
@@ -268,6 +297,7 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                             href={`/tasks/${task.id}`}
                             className="text-sm font-semibold text-fg group-hover:text-accent transition-colors line-clamp-2"
                           >
+                            <span className="mr-1.5 font-mono text-[11px] text-fg-subtle">#{task.ticketNumber}</span>
                             {task.title}
                           </Link>
                           <span
@@ -282,6 +312,18 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                         {task.description && (
                           <p className="text-xs text-fg-muted line-clamp-2">{task.description}</p>
                         )}
+
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <SlaBadge task={task} />
+                          {task.escalationLevel > 1 && (
+                            <span
+                              className="inline-flex items-center rounded-md border border-danger/25 bg-danger/10 px-1.5 py-0.5 text-[10px] font-semibold text-danger"
+                              title="Current escalation level"
+                            >
+                              {ESCALATION_LEVELS[task.escalationLevel] ?? `L${task.escalationLevel}`}
+                            </span>
+                          )}
+                        </div>
 
                         <div className="pt-2 border-t border-line flex items-center justify-between text-xs">
                           {/* Assignee Avatar */}
@@ -317,6 +359,18 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                               <span className="text-[11px]">{task._count?.comments || 0}</span>
                             </button>
 
+                            {/* Escalate */}
+                            {canEscalate && (
+                              <button
+                                onClick={() => setEscalateTask(task)}
+                                className="text-fg-muted transition-colors hover:text-danger"
+                                title="Escalate ticket"
+                                aria-label={`Escalate ticket ${task.ticketNumber}`}
+                              >
+                                <ArrowUpCircle className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+
                             {/* Quick Status Select */}
                             {canEdit ? (
                               <select
@@ -324,11 +378,13 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                                 onChange={(e) => handleStatusChange(task, e.target.value)}
                                 className="bg-surface-2 text-fg text-[11px] font-medium border border-line rounded px-1.5 py-0.5 focus:outline-none"
                               >
-                                {COLUMNS.map((c) => (
-                                  <option key={c.id} value={c.id}>
-                                    Move to {c.title}
-                                  </option>
-                                ))}
+                                {(task.status === 'ESCALATED' ? COLUMNS : MOVABLE_COLUMNS)
+                                  .filter((c) => c.id !== 'CLOSED' || isLead || task.status === 'CLOSED')
+                                  .map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                      Move to {c.title}
+                                    </option>
+                                  ))}
                               </select>
                             ) : (
                               <span title="Permission restricted">
@@ -354,7 +410,7 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
             <div className="flex items-center space-x-3 border-b border-line pb-3">
               <AlertTriangle className="h-6 w-6 text-warning shrink-0" />
               <div>
-                <h3 className="text-base font-bold text-fg">409 Conflict: Task Modified By Another User</h3>
+                <h3 className="text-base font-bold text-fg">409 Conflict: Ticket Modified By Another User</h3>
                 <p className="text-xs text-fg-muted">
                   Someone saved edits while you were reviewing. Review changes below to resolve.
                 </p>
@@ -370,7 +426,7 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                 <p className="text-fg-subtle">Stale Version: v{conflictState.staleVersion}</p>
               </div>
 
-              <div className="p-4 rounded-xl bg-accent/60 border border-accent/25 space-y-2">
+              <div className="p-4 rounded-xl bg-accent/10 border border-accent/25 space-y-2">
                 <p className="font-bold text-accent uppercase tracking-wider">Latest Server Record</p>
                 <p className="text-fg-muted">
                   Current Title: <span className="font-semibold text-fg">{conflictState.latestTask?.title}</span>
@@ -400,12 +456,12 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
         </div>
       )}
 
-      {/* CREATE TASK MODAL */}
+      {/* CREATE TICKET MODAL */}
       {isCreateOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-lg bg-surface p-6 rounded-2xl border border-line shadow-xl space-y-4">
             <div className="flex items-center justify-between border-b border-line pb-3">
-              <h3 className="text-lg font-bold text-fg">Create New Task</h3>
+              <h3 className="text-lg font-bold text-fg">Create New Ticket</h3>
               <button onClick={() => setIsCreateOpen(false)} className="p-1 text-fg-subtle hover:text-fg-muted">
                 <X className="h-5 w-5" />
               </button>
@@ -420,7 +476,7 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
             <form onSubmit={handleCreateTask} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-fg-muted uppercase tracking-wider mb-1">
-                  Task Title *
+                  Ticket Title *
                 </label>
                 <input
                   type="text"
@@ -438,7 +494,7 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                 </label>
                 <textarea
                   rows={3}
-                  placeholder="Task details..."
+                  placeholder="Ticket details..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   className="w-full bg-surface-2 border border-line rounded-xl px-3.5 py-2.5 text-sm text-fg focus:outline-none focus:bg-surface focus:border-accent/60 resize-none"
@@ -474,7 +530,6 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                     <option value="TODO">To Do</option>
                     <option value="IN_PROGRESS">In Progress</option>
                     <option value="IN_REVIEW">In Review</option>
-                    <option value="DONE">Done</option>
                   </select>
                 </div>
               </div>
@@ -489,12 +544,45 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                   className="w-full bg-surface-2 border border-line rounded-xl px-3 py-2.5 text-xs text-fg focus:outline-none"
                 >
                   <option value="">Unassigned</option>
-                  {members.map((m: any) => (
+                  {members.filter((m: any) => m.role !== 'VIEWER').map((m: any) => (
                     <option key={m.userId} value={m.userId}>
                       {m.user.name} ({m.role})
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-fg-muted uppercase tracking-wider mb-1">
+                    Requester
+                  </label>
+                  <select
+                    value={requesterId}
+                    onChange={(e) => setRequesterId(e.target.value)}
+                    className="w-full bg-surface-2 border border-line rounded-xl px-3 py-2.5 text-xs text-fg focus:outline-none"
+                  >
+                    <option value="">Me</option>
+                    {members.map((m: any) => (
+                      <option key={m.userId} value={m.userId}>
+                        {m.user.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-fg-muted uppercase tracking-wider mb-1">
+                    Category
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={50}
+                    placeholder="e.g. Billing"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full bg-surface-2 border border-line rounded-xl px-3.5 py-2.5 text-xs text-fg focus:outline-none focus:border-accent/60"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center justify-end space-x-3 pt-3">
@@ -510,7 +598,7 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                   disabled={isCreating}
                   className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-xs font-semibold text-white shadow-md"
                 >
-                  {isCreating ? 'Creating...' : 'Create Task (v1)'}
+                  {isCreating ? 'Creating...' : 'Create Ticket'}
                 </button>
               </div>
             </form>
@@ -550,7 +638,14 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
                   return (
                     <div key={c.id} className="p-3 rounded-xl bg-surface-2 border border-line space-y-1 text-xs">
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-fg">{c.user?.name}</span>
+                        <span className="font-semibold text-fg">
+                          {c.user?.name}
+                          {c.isInternal && (
+                            <span className="ml-2 inline-flex items-center gap-1 rounded border border-warning/25 bg-warning/10 px-1.5 py-0.5 text-[10px] font-semibold text-warning">
+                              <Lock className="h-2.5 w-2.5" /> Internal
+                            </span>
+                          )}
+                        </span>
                         {canDelete && (
                           <button onClick={() => handleDeleteComment(c.id)} className="text-fg-subtle hover:text-danger">
                             <Trash2 className="h-3.5 w-3.5" />
@@ -567,6 +662,19 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
             {/* Comment Post Form */}
             {!isArchived && (
               <form onSubmit={handleAddComment} className="flex items-center space-x-2 pt-3 border-t border-line">
+                <label
+                  className="flex cursor-pointer items-center gap-1.5 whitespace-nowrap text-[11px] text-fg-muted"
+                  title="Internal notes are visible to staff only, never to viewers"
+                >
+                  <input
+                    type="checkbox"
+                    checked={isInternalNote}
+                    onChange={(e) => setIsInternalNote(e.target.checked)}
+                    className="accent-[rgb(var(--accent))]"
+                  />
+                  <Lock className="h-3 w-3" />
+                  Internal
+                </label>
                 <input
                   type="text"
                   placeholder="Write a comment... (e.g. @Alex)"
@@ -586,6 +694,9 @@ export default function TasksKanbanPage({ params }: { params: { id: string } }) 
           </div>
         </div>
       )}
+
+      {/* ESCALATE MODAL */}
+      {escalateTask && <EscalateModal task={escalateTask} onClose={() => setEscalateTask(null)} />}
     </div>
   );
 }
