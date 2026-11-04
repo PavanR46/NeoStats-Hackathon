@@ -53,6 +53,9 @@ export function SocketProvider({ children, user }: { children: React.ReactNode; 
     function onTaskUpdated(data: any) {
       queryClient.invalidateQueries({ queryKey: ['tasks', data.projectId] });
       queryClient.invalidateQueries({ queryKey: ['task', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['task-escalations'] });
+      queryClient.invalidateQueries({ queryKey: ['escalations'] });
+      queryClient.invalidateQueries({ queryKey: ['performance'] });
     }
 
     function onTaskDeleted(data: any) {

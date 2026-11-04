@@ -1,3 +1,5 @@
+import type { PerformanceMatrix } from '@/lib/performance';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
 export class ApiError extends Error {
@@ -163,7 +165,7 @@ export const taskApi = {
 
   getById: (id: string) => fetchApi<{ task: any }>(`/tasks/${id}`),
 
-  create: (projectId: string, data: { title: string; description?: string; status?: string; priority?: string; assigneeId?: string | null; dueDate?: string }) =>
+  create: (projectId: string, data: { title: string; description?: string; status?: string; priority?: string; assigneeId?: string | null; dueDate?: string; requesterId?: string | null; category?: string }) =>
     fetchApi<{ message: string; task: any }>(`/projects/${projectId}/tasks`, {
       method: 'POST',
       body: JSON.stringify(data),
@@ -185,6 +187,14 @@ export const taskApi = {
     fetchApi<{ message: string }>(`/tasks/${id}`, {
       method: 'DELETE',
     }),
+
+  escalate: (id: string, data: { version: number; reason: string }) =>
+    fetchApi<{ message: string; task: any }>(`/tasks/${id}/escalate`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  escalations: (id: string) => fetchApi<{ escalations: any[] }>(`/tasks/${id}/escalations`),
 };
 
 // Comments API
@@ -192,10 +202,10 @@ export const commentApi = {
   list: (taskId: string, page = 1, limit = 20) =>
     fetchApi<{ data: any[]; pagination: any }>(`/tasks/${taskId}/comments?page=${page}&limit=${limit}`),
 
-  create: (taskId: string, content: string) =>
+  create: (taskId: string, content: string, isInternal = false) =>
     fetchApi<{ message: string; comment: any }>(`/tasks/${taskId}/comments`, {
       method: 'POST',
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content, isInternal }),
     }),
 
   delete: (id: string) =>
@@ -237,4 +247,27 @@ export const notificationApi = {
     fetchApi<{ message: string }>('/notifications/read-all', {
       method: 'PATCH',
     }),
+};
+
+// Escalations API
+export const escalationApi = {
+  list: (query: { page?: number; limit?: number; type?: string; projectId?: string } = {}) => {
+    const params = new URLSearchParams();
+    if (query.page) params.append('page', query.page.toString());
+    if (query.limit) params.append('limit', query.limit.toString());
+    if (query.type) params.append('type', query.type);
+    if (query.projectId) params.append('projectId', query.projectId);
+    return fetchApi<{ data: any[]; pagination: any }>(`/escalations?${params.toString()}`);
+  },
+};
+
+// Performance API
+export const performanceApi = {
+  matrix: (query: { from?: string; to?: string; projectId?: string } = {}) => {
+    const params = new URLSearchParams();
+    if (query.from) params.append('from', query.from);
+    if (query.to) params.append('to', query.to);
+    if (query.projectId) params.append('projectId', query.projectId);
+    return fetchApi<PerformanceMatrix>(`/performance/matrix?${params.toString()}`);
+  },
 };

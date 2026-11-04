@@ -19,3 +19,11 @@ export function useTaskDetail(id: string) {
     enabled: !!id,
   });
 }
+
+export function useTaskEscalations(id: string) {
+  return useQuery({
+    queryKey: queryKeys.escalations.forTask(id),
+    queryFn: () => taskApi.escalations(id),
+    enabled: !!id,
+  });
+}
