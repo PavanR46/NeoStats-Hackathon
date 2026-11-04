@@ -19,6 +19,16 @@ export const statusStyles: Record<string, { label: string; badge: string; dot: s
     badge: 'bg-success/10 text-success border-success/25',
     dot: 'bg-success',
   },
+  ESCALATED: {
+    label: 'Escalated',
+    badge: 'bg-danger/10 text-danger border-danger/25',
+    dot: 'bg-danger',
+  },
+  CLOSED: {
+    label: 'Closed',
+    badge: 'bg-surface-2 text-fg-subtle border-line',
+    dot: 'bg-line-strong',
+  },
 };
 
 export const priorityStyles: Record<string, { label: string; badge: string }> = {

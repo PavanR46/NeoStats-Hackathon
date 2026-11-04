@@ -20,7 +20,6 @@ export function useTaskDetail(id: string) {
   });
 }
 
-
 export function useTaskEscalations(id: string) {
   return useQuery({
     queryKey: queryKeys.escalations.forTask(id),
